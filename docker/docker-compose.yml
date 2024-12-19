@@ -1,0 +1,9 @@
+services:
+  distribution_dev:
+    image: sireth/distribution_dev:latest
+    container_name: distribution_dev
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    volumes:
+      - ../:/distribution
