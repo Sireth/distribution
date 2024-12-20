@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import (
     QListView,
 )
 
+from windows.binomial.binomial_window import BinomialWindow
 from windows.poisson.poisson_window import PoissonWindow
 
 
@@ -34,7 +35,7 @@ class MainWindow(QMainWindow):
         # Добавление элементов
         distributions = [
             "Распределение Пуассона",
-            "Distribution 2",
+            "Биномиальное распределение",
             "Distribution 3",
             "Distribution 4",
             "Distribution 5",
@@ -56,11 +57,8 @@ class MainWindow(QMainWindow):
         match distribution_id:
             case 0:
                 window = PoissonWindow()
-
-                # window.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)  # Освобождаем память при закрытии
-            # case 1:
-            #     from windows.bernoulli_window import BernoulliWindow
-            #     dialog = BernoulliWindow(self)
+            case 1:
+                window = BinomialWindow()
             # case 2:
             #     from windows.geometric_window import GeometricWindow
             #     dialog = GeometricWindow(self)
@@ -71,5 +69,5 @@ class MainWindow(QMainWindow):
             #     from windows.hypergeometric_window import HypergeometricWindow
             #     dialog = HypergeometricWindow(self)
             # case _:
-
+        window.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         window.show()

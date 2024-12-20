@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout, QLabel, QLineEdit, QPushButton, QWidget, QFileDialog
 )
 
-from windows.poisson.poisson_plot import PoissonDensityPlot, PoissonPlot
+from windows.binomial.binomial_plot import BinomialPlot, BinomialDensityPlot
 import scipy.stats as stats
 
 from decimal import Decimal
@@ -27,7 +27,7 @@ class FocusOutLineEdit(QLineEdit):
         super().focusOutEvent(event)
 
 
-class PoissonWindow(QWidget):
+class BinomialWindow(QWidget):
 
     inputs_validated = pyqtSignal(bool)
     n_changed = pyqtSignal(int)
@@ -35,7 +35,7 @@ class PoissonWindow(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.setWindowTitle("Распределение Пуассона")
+        self.setWindowTitle("Биномиальное распределение")
         self.resize(400, 300)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
@@ -45,7 +45,6 @@ class PoissonWindow(QWidget):
         self.q = 0  # Вероятность неудачи
         self.k = 0  # Количество событий
 
-        self.lambda_value = 0
         self.probability_eq = 0
         self.probability_eq_less = 0
 
@@ -91,13 +90,6 @@ class PoissonWindow(QWidget):
         self.q_input.focusLost.connect(self.calculate_q)
         self.q_input.textChanged.connect(lambda _: self.validate_inputs())
 
-        self.lambda_label = QLabel("Интенсивность отказов (λ):")
-        self.lambda_input = QLineEdit()
-        self.lambda_input.setReadOnly(True)
-        layout.addWidget(self.lambda_label)
-        layout.addWidget(self.lambda_input)
-        self.inputs_validated.connect(lambda _ : self.lambda_input.setText(str(self.lambda_value)))
-
 
         self.plot_distribution_density_btn = QPushButton("Построить график плотности распределения")
         layout.addWidget(self.plot_distribution_density_btn)
@@ -106,7 +98,7 @@ class PoissonWindow(QWidget):
         self.plot_distribution_density_btn.setEnabled(False)
 
 
-        self.plot_distribution_btn = QPushButton("Построить график распределения")
+        self.plot_distribution_btn = QPushButton("Построить график плотности распределения")
         layout.addWidget(self.plot_distribution_btn)
         self.plot_distribution_btn.clicked.connect(self.plot_distribution)
         self.inputs_validated.connect(self.plot_distribution_btn.setEnabled)
@@ -136,7 +128,6 @@ class PoissonWindow(QWidget):
         layout.addWidget(self.probability_eq_less_label)
         layout.addWidget(self.probability_eq_less_input)
         self.n_changed.connect(lambda _ : self.calculate_probability_eq_less())
-
 
         self.export_btn = QPushButton("Экспортировать данные")
         layout.addWidget(self.export_btn)
@@ -174,7 +165,7 @@ class PoissonWindow(QWidget):
             return
 
         self.k = int(self.k_input.text())
-        self.probability_eq = stats.poisson.pmf(self.k, float(self.lambda_value))
+        self.probability_eq = stats.binom.pmf(self.k, self.n, float(self.p))
         self.probability_eq_input.setText(str(self.probability_eq))
         return self.probability_eq
 
@@ -185,7 +176,7 @@ class PoissonWindow(QWidget):
             return
 
         self.k = int(self.k_input.text())
-        self.probability_eq_less = stats.poisson.cdf(self.k, float(self.lambda_value))
+        self.probability_eq_less = stats.binom.cdf(self.k, self.n, float(self.p))
         self.probability_eq_less_input.setText(str(self.probability_eq_less))
         return self.probability_eq_less
 
@@ -227,27 +218,14 @@ class PoissonWindow(QWidget):
         self.p = Decimal(self.p_input.text())
         self.q = Decimal(1) - Decimal(self.p)
 
-        self.lambda_value = Decimal(self.n) * Decimal(self.p)
-        self.lambda_input.setText(str(Decimal(self.lambda_value)))
-
-
-    def calculate_lambda(self):
-        self.n = int(self.n_input.text())
-        self.p = Decimal(self.p_input.text())
-
-
-        # Вычисление значения λ
-        self.lambda_value = self.n * self.p
-        self.lambda_input.setText(str(self.lambda_value))
 
     def plot_distribution_density(self):
-        self.plot_density_window = PoissonDensityPlot(self.lambda_value, self.n)
-        self.plot_density_window.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        self.plot_density_window = BinomialDensityPlot(self.n, self.p, self.q)
         self.plot_density_window.show()
 
+
     def plot_distribution(self):
-        self.plot_window = PoissonPlot(self.lambda_value, self.n)
-        self.plot_window.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        self.plot_window = BinomialPlot(self.n, self.p, self.q)
         self.plot_window.show()
 
     def export_data(self):
@@ -261,7 +239,7 @@ class PoissonWindow(QWidget):
                 file_name += ".xlsx"
 
             k_values = np.arange(0, self.n + 1)
-            pmf_values = stats.poisson.pmf(k_values, float(self.lambda_value))
+            pmf_values = stats.binom.pmf(k_values, self.n, float(self.p))
 
             data = {
                 'k': k_values,
@@ -280,9 +258,7 @@ class PoissonWindow(QWidget):
 
                 sheet['C1'] = 'Размер выборки (n)'
                 sheet['C2'] = self.n
-                sheet['D1'] = 'Интенсивность отказов (λ)'
-                sheet['D2'] = self.lambda_value
-                sheet['E1'] = 'Вероятность успеха (p)'
-                sheet['E2'] = self.p
-                sheet['F1'] = 'Вероятность неудачи (q)'
-                sheet['F2'] = self.q
+                sheet['D1'] = 'Вероятность успеха (p)'
+                sheet['D2'] = self.p
+                sheet['E1'] = 'Вероятность неудачи (q)'
+                sheet['E2'] = self.q

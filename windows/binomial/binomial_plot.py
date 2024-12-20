@@ -8,14 +8,11 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog
 import scipy.stats as stats
 
-class PoissonDensityPlot(QWidget):
-    def __init__(self, lambda_value, n):
+class BinomialDensityPlot(QWidget):
+    def __init__(self, n, p, q):
         super().__init__()
 
-        self.lambda_value = lambda_value
-        self.n = n
-
-        self.setWindowTitle("График плотности распределения Пуассона")
+        self.setWindowTitle("График плотности Биномиального распределения")
         self.setGeometry(100, 100, 800, 600)
 
         # Создаем фигуру для графика
@@ -38,11 +35,11 @@ class PoissonDensityPlot(QWidget):
         layout.addWidget(self.copy_button)
 
         self.k_values = np.arange(0, n + 1)
-        self.pmf_values = stats.poisson.pmf(self.k_values, float(lambda_value))
+        self.pmf_values = stats.binom.pmf(self.k_values, n, float(p))
 
         ax.bar(self.k_values, self.pmf_values, color="blue", alpha=0.7, label="Теоретическое распределение")
 
-        ax.set_title(f"Плотность распределения Пуассона (λ={lambda_value})")
+        ax.set_title(f"Плотность Биномиального распределения (n={n}, p={p}, q={q})")
         ax.set_xlabel("Количество событий")
         ax.set_ylabel("Вероятность")
 
@@ -92,14 +89,11 @@ class PoissonDensityPlot(QWidget):
         clipboard = QApplication.clipboard()
         clipboard.setImage(image)
 
-class PoissonPlot(QWidget):
-    def __init__(self, lambda_value, n):
+class BinomialPlot(QWidget):
+    def __init__(self, n, p, q):
         super().__init__()
 
-        self.lambda_value = lambda_value
-        self.n = n
-
-        self.setWindowTitle("График распределения Пуассона")
+        self.setWindowTitle("График Биномиального распределения")
         self.setGeometry(100, 100, 800, 600)
 
         # Создаем фигуру для графика
@@ -122,11 +116,11 @@ class PoissonPlot(QWidget):
         layout.addWidget(self.copy_button)
 
         self.k_values = np.arange(0, n + 1)
-        self.pmf_values = stats.poisson.cdf(self.k_values, float(lambda_value))
+        self.pmf_values = stats.binom.cdf(self.k_values, n, float(p))
 
         ax.bar(self.k_values, self.pmf_values, color="blue", alpha=0.7, label="Теоретическое распределение")
 
-        ax.set_title(f"Распределение Пуассона (λ={lambda_value})")
+        ax.set_title(f"Биномиальное распределения (n={n}, p={p}, q={q})")
         ax.set_xlabel("Количество событий")
         ax.set_ylabel("Вероятность")
 
