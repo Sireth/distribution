@@ -8,6 +8,7 @@ from PyQt6.QtWidgets import (
 )
 
 from windows.binomial.binomial_window import BinomialWindow
+from windows.normal.normal_window import NormalWindow
 from windows.poisson.poisson_window import PoissonWindow
 
 
@@ -36,7 +37,7 @@ class MainWindow(QMainWindow):
         distributions = [
             "Распределение Пуассона",
             "Биномиальное распределение",
-            "Distribution 3",
+            "Нормальное распределение",
             "Distribution 4",
             "Distribution 5",
         ]
@@ -59,9 +60,8 @@ class MainWindow(QMainWindow):
                 window = PoissonWindow()
             case 1:
                 window = BinomialWindow()
-            # case 2:
-            #     from windows.geometric_window import GeometricWindow
-            #     dialog = GeometricWindow(self)
+            case 2:
+                window = NormalWindow()
             # case 3:
             #     from windows.binomial_window import BinomialWindow
             #     dialog = BinomialWindow(self)
