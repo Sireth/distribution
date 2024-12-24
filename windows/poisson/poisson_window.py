@@ -262,10 +262,12 @@ class PoissonWindow(QWidget):
 
             k_values = np.arange(0, self.n + 1)
             pmf_values = stats.poisson.pmf(k_values, float(self.lambda_value))
+            cdf_values = stats.poisson.cdf(k_values, float(self.lambda_value))
 
             data = {
                 'k': k_values,
-                'Вероятность': pmf_values
+                'Функция распределения (CDF)': cdf_values,
+                'Плотность распределения (PMF)': pmf_values,
             }
 
             df = pd.DataFrame(data)
@@ -278,11 +280,29 @@ class PoissonWindow(QWidget):
                 workbook = writer.book
                 sheet = workbook['Poisson Data']
 
-                sheet['C1'] = 'Размер выборки (n)'
-                sheet['C2'] = self.n
-                sheet['D1'] = 'Интенсивность отказов (λ)'
-                sheet['D2'] = self.lambda_value
-                sheet['E1'] = 'Вероятность успеха (p)'
-                sheet['E2'] = self.p
-                sheet['F1'] = 'Вероятность неудачи (q)'
-                sheet['F2'] = self.q
+                sheet['D1'] = 'Размер выборки (n)'
+                sheet['D2'] = self.n
+                sheet['E1'] = 'Интенсивность отказов (λ)'
+                sheet['E2'] = self.lambda_value
+                sheet['F1'] = 'Вероятность успеха (p)'
+                sheet['F2'] = self.p
+                sheet['G1'] = 'Вероятность неудачи (q)'
+                sheet['G2'] = self.q
+
+
+                for col in sheet.iter_cols(min_row=1, max_row=1, min_col=1, max_col=7):
+                    for cell in col:
+                        cell.font = cell.font.copy(bold=True)
+
+                # Применяем автоширину для всех столбцов
+                for column_cells in sheet.columns:
+                    max_length = 0
+                    column_letter = column_cells[0].column_letter
+                    for cell in column_cells:
+                        try:
+                            if cell.value:
+                                max_length = max(max_length, len(str(cell.value)))
+                        except:
+                            pass
+                    adjusted_width = max_length + 5
+                    sheet.column_dimensions[column_letter].width = adjusted_width

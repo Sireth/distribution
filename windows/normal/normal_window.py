@@ -310,32 +310,58 @@ class NormalWindow(QWidget):
             if not file_extension:
                 file_name += ".xlsx"
 
-            k_values = np.arange(0, self.n + 1)
-            pmf_values = stats.poisson.pmf(k_values, float(self.lambda_value))
+            # Генерация диапазона временных значений
+            time_values = np.linspace(float(self.mu - 4 * self.sigma), float(self.mu + 4 * self.sigma), 1000)
 
+            # Расчет характеристик распределения Вейбулла
+            pdf_values = stats.norm.pdf(time_values, loc=float(self.mu), scale=float(self.sigma))
+            cdf_values = stats.norm.cdf(time_values, loc=float(self.mu), scale=float(self.sigma))
+            reliability_values = 1 - cdf_values  # Вероятность безотказной работы
+            failure_rate_values = pdf_values / reliability_values  # Интенсивность отказов
+
+            # Создание словаря данных
             data = {
-                'k': k_values,
-                'Вероятность': pmf_values
+                'Время': time_values,
+                'Функция распределения (CDF)': cdf_values,
+                'Плотность распределения (PDF)': pdf_values,
+                'Вероятность безотказной работы': reliability_values,
+                'Интенсивность отказов': failure_rate_values
             }
 
+            # Преобразование данных в DataFrame
             df = pd.DataFrame(data)
-            # Создаем объект ExcelWriter
+
+            # Экспорт данных в Excel
             with pd.ExcelWriter(file_name, engine='openpyxl') as writer:
-                # Записываем данные в лист 'Poisson Data'
-                df.to_excel(writer, index=False, sheet_name='Poisson Data')
+                df.to_excel(writer, index=False, sheet_name='Normal Data')
 
                 # Получаем объект Workbook для дальнейшего изменения
                 workbook = writer.book
-                sheet = workbook['Poisson Data']
+                sheet = workbook['Normal Data']
 
-                sheet['C1'] = 'Размер выборки (n)'
-                sheet['C2'] = self.n
-                sheet['D1'] = 'Интенсивность отказов (λ)'
-                sheet['D2'] = self.lambda_value
-                sheet['E1'] = 'Вероятность успеха (p)'
-                sheet['E2'] = self.p
-                sheet['F1'] = 'Вероятность неудачи (q)'
-                sheet['F2'] = self.q
+                # Записываем параметры распределения в верхнюю часть таблицы
+                sheet['F1'] = 'Параметры нормального распределения:'
+                sheet['F2'] = 'Среднее время до отказа (μ)'
+                sheet['G2'] = self.mu
+                sheet['F3'] = 'Стандартное отклонение (σ)'
+                sheet['G3'] = self.sigma
+
+                for col in sheet.iter_cols(min_row=1, max_row=1, min_col=1, max_col=7):
+                    for cell in col:
+                        cell.font = cell.font.copy(bold=True)
+
+                # Применяем автоширину для всех столбцов
+                for column_cells in sheet.columns:
+                    max_length = 0
+                    column_letter = column_cells[0].column_letter
+                    for cell in column_cells:
+                        try:
+                            if cell.value:
+                                max_length = max(max_length, len(str(cell.value)))
+                        except:
+                            pass
+                    adjusted_width = max_length + 5
+                    sheet.column_dimensions[column_letter].width = adjusted_width
 
     def set_time(self):
         if self.validate_number(self.time_input):
