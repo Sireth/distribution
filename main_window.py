@@ -11,6 +11,7 @@ from windows.binomial.binomial_window import BinomialWindow
 from windows.expon.expon_window import ExponWindow
 from windows.normal.normal_window import NormalWindow
 from windows.poisson.poisson_window import PoissonWindow
+from windows.weibull.weibull_window import WeibullWindow
 
 
 class MainWindow(QMainWindow):
@@ -40,7 +41,7 @@ class MainWindow(QMainWindow):
             "Биномиальное распределение",
             "Нормальное распределение",
             "Экспоненциальное распределение",
-            "Distribution 5",
+            "Распределение Вейбулла",
         ]
         for distribution in distributions:
             item = QStandardItem(distribution)
@@ -65,6 +66,8 @@ class MainWindow(QMainWindow):
                 window = NormalWindow()
             case 3:
                 window = ExponWindow()
+            case 4:
+                window = WeibullWindow()
             # case 3:
             #     from windows.binomial_window import BinomialWindow
             #     dialog = BinomialWindow(self)

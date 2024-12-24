@@ -70,7 +70,7 @@ class ExponWindow(QWidget):
         self.lambda_value_label = QLabel("Интенсивность отказов (λ):")
         self.lambda_value_input = FocusOutLineEdit()
         self.lambda_value_input.setPlaceholderText("Введите интенсивность отказов")
-        regex = QRegularExpression(r"^\d*(\.\d+)?$")
+        regex = QRegularExpression(r"^(?!0$)(?!0\.0+$)\d+(\.\d+)?$")
         double_validator = QRegularExpressionValidator(regex)
         self.lambda_value_input.setValidator(double_validator)
         layout.addWidget(self.lambda_value_label)
@@ -111,7 +111,7 @@ class ExponWindow(QWidget):
 
         self.inputs_validated.connect(lambda _: self.calculate_with_time())
 
-        self.f_label = QLabel("Вероятность отказа (F(t)):")
+        self.f_label = QLabel("Вероятность безотказной работы до времени t (R(t)):")
         self.f_input = QLineEdit()
         self.f_input.setReadOnly(True)
         layout.addWidget(self.f_label)
@@ -215,7 +215,7 @@ class ExponWindow(QWidget):
         if (self.reliability_level is None) or (not self.check):
             self.time_for_reliability = None
         else:
-            self.time_for_reliability = stats.expon.ppf(float(self.reliability_level), scale=float(1 / self.lambda_value))
+            self.time_for_reliability = stats.expon.ppf(float(1 - self.reliability_level), scale=float(1 / self.lambda_value))
 
         self.time_for_reliability_changed.emit(self.time_for_reliability)
 
@@ -223,7 +223,7 @@ class ExponWindow(QWidget):
         if (self.max_failure_probability is None) or (not self.check):
             self.replacement_time = None
         else:
-            self.replacement_time = stats.expon.ppf(float(1 - self.max_failure_probability), scale=float(1 / self.lambda_value))
+            self.replacement_time = stats.expon.ppf(float(self.max_failure_probability), scale=float(1 / self.lambda_value))
 
         self.replacement_time_changed.emit(self.replacement_time)
 
