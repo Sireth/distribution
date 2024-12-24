@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout, QLabel, QLineEdit, QPushButton, QWidget, QFileDialog
 )
 
-from windows.normal.normal_plot import NormalDensityPlot, NormalPlot, NormalReliabilityPlot, NormalFailureRatePlot
+from windows.expon.expon_plot import ExponDensityPlot, ExponPlot, ExponReliabilityPlot
 import scipy.stats as stats
 
 from decimal import Decimal
@@ -27,12 +27,11 @@ class FocusOutLineEdit(QLineEdit):
         super().focusOutEvent(event)
 
 
-class NormalWindow(QWidget):
+class ExponWindow(QWidget):
 
     inputs_validated = pyqtSignal(bool)
 
     time_changed = pyqtSignal()
-    lambda_value_changed = pyqtSignal(object)
     f_t_changed = pyqtSignal(object)
     reliability_changed = pyqtSignal(object)
 
@@ -44,16 +43,14 @@ class NormalWindow(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.setWindowTitle("Нормальное распределение")
+        self.setWindowTitle("Экспоненциальное распределение")
         self.resize(400, 300)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
         # Параметры
-        self.mu = 0     # Среднее время до отказа
-        self.sigma = 0  # Стандартное отклонение
+        self.lambda_value = None  # Интенсивность отказа
 
         self.time = None
-        self.lambda_value = None  # Интенсивность отказа
         self.f_t = None           # Вероятность отказа
         self.reliability = None   # Вероятность безотказной работы
 
@@ -69,28 +66,17 @@ class NormalWindow(QWidget):
         layout = QVBoxLayout(self)
         self.setLayout(layout)
 
-        self.mu_label = QLabel("Среднее время до отказа (μ):")
-        self.mu_input = FocusOutLineEdit()
-        self.mu_input.setPlaceholderText("Введите среднее время до отказа")
+
+        self.lambda_value_label = QLabel("Интенсивность отказов (λ):")
+        self.lambda_value_input = FocusOutLineEdit()
+        self.lambda_value_input.setPlaceholderText("Введите интенсивность отказов")
         regex = QRegularExpression(r"^\d*(\.\d+)?$")
         double_validator = QRegularExpressionValidator(regex)
-        self.mu_input.setValidator(double_validator)
-        layout.addWidget(self.mu_label)
-        layout.addWidget(self.mu_input)
-        self.mu_input.textChanged.connect(lambda _ : self.validate_number(self.mu_input))
-        self.mu_input.textChanged.connect(lambda _: self.validate_inputs())
-
-
-        self.sigma_label = QLabel("Стандартное отклонение (σ):")
-        self.sigma_input = FocusOutLineEdit()
-        self.sigma_input.setPlaceholderText("Введите стандартное отклонение")
-        regex = QRegularExpression(r"^\d*(\.\d+)?$")
-        double_validator = QRegularExpressionValidator(regex)
-        self.sigma_input.setValidator(double_validator)
-        layout.addWidget(self.sigma_label)
-        layout.addWidget(self.sigma_input)
-        self.sigma_input.textChanged.connect(lambda _ : self.validate_number(self.sigma_input))
-        self.sigma_input.textChanged.connect(lambda _: self.validate_inputs())
+        self.lambda_value_input.setValidator(double_validator)
+        layout.addWidget(self.lambda_value_label)
+        layout.addWidget(self.lambda_value_input)
+        self.lambda_value_input.textChanged.connect(lambda _ : self.validate_number(self.lambda_value_input))
+        self.lambda_value_input.textChanged.connect(lambda _: self.validate_inputs())
 
         self.plot_distribution_density_btn = QPushButton("Построить график плотности распределения")
         layout.addWidget(self.plot_distribution_density_btn)
@@ -113,13 +99,6 @@ class NormalWindow(QWidget):
         self.plot_reliability_btn.setEnabled(False)
 
 
-        self.plot_failure_rate_btn = QPushButton("Построить график интенсивности отказов")
-        layout.addWidget(self.plot_failure_rate_btn)
-        self.plot_failure_rate_btn.clicked.connect(self.plot_failure_rate)
-        self.inputs_validated.connect(self.plot_failure_rate_btn.setEnabled)
-        self.plot_failure_rate_btn.setEnabled(False)
-
-
         self.time_label = QLabel("Время (t):")
         self.time_input = FocusOutLineEdit()
         self.time_input.setPlaceholderText("Введите время")
@@ -131,15 +110,6 @@ class NormalWindow(QWidget):
         self.time_input.textChanged.connect(lambda _ : self.set_time())
 
         self.inputs_validated.connect(lambda _: self.calculate_with_time())
-
-        self.lambda_label = QLabel("Интенсивность отказа (λ(t)):")
-        self.lambda_input = QLineEdit()
-        self.lambda_input.setReadOnly(True)
-        layout.addWidget(self.lambda_label)
-        layout.addWidget(self.lambda_input)
-        self.lambda_value_changed.connect(lambda value: self.lambda_input.setText(str(value))
-                                                 if value is not None
-                                                 else self.lambda_input.setText(""))
 
         self.f_label = QLabel("Вероятность отказа (F(t)):")
         self.f_input = QLineEdit()
@@ -232,15 +202,12 @@ class NormalWindow(QWidget):
 
     def calculate_with_time(self):
         if (self.time is None) or (not self.check):
-            self.lambda_value = None
             self.f_t = None
             self.reliability = None
         else:
-            self.f_t = stats.norm.pdf(float(self.time), loc=float(self.mu), scale=float(self.sigma))
-            self.reliability = 1 - stats.norm.cdf(float(self.time), loc=float(self.mu), scale=float(self.sigma))
-            self.lambda_value = self.f_t / self.reliability
+            self.f_t = stats.expon.pdf(float(self.time), scale=float(1 / self.lambda_value))
+            self.reliability = 1 - stats.expon.cdf(float(self.time), scale=float(1 / self.lambda_value))
 
-        self.lambda_value_changed.emit(self.lambda_value)
         self.f_t_changed.emit(self.f_t)
         self.reliability_changed.emit(self.reliability)
 
@@ -248,7 +215,7 @@ class NormalWindow(QWidget):
         if (self.reliability_level is None) or (not self.check):
             self.time_for_reliability = None
         else:
-            self.time_for_reliability = stats.norm.ppf(float(self.reliability_level), loc=float(self.mu), scale=float(self.sigma))
+            self.time_for_reliability = stats.expon.ppf(float(self.reliability_level), scale=float(1 / self.lambda_value))
 
         self.time_for_reliability_changed.emit(self.time_for_reliability)
 
@@ -256,16 +223,14 @@ class NormalWindow(QWidget):
         if (self.max_failure_probability is None) or (not self.check):
             self.replacement_time = None
         else:
-            self.replacement_time = stats.norm.ppf(float(1 - self.max_failure_probability), loc=float(self.mu), scale=float(self.sigma))
+            self.replacement_time = stats.expon.ppf(float(1 - self.max_failure_probability), scale=float(1 / self.lambda_value))
 
         self.replacement_time_changed.emit(self.replacement_time)
 
 
     def validate_inputs(self):
         self.check = True
-        if not self.validate_number(self.mu_input):
-            self.check = False
-        if not self.validate_number(self.sigma_input):
+        if not self.validate_number(self.lambda_value_input):
             self.check = False
 
         if self.check:
@@ -277,28 +242,22 @@ class NormalWindow(QWidget):
 
     def set_values(self):
 
-        self.mu = Decimal(self.mu_input.text())
-        self.sigma = Decimal(self.sigma_input.text())
+        self.lambda_value = Decimal(self.lambda_value_input.text())
 
     def plot_distribution_density(self):
-        self.plot_density_window = NormalDensityPlot(self.mu, self.sigma)
+        self.plot_density_window = ExponDensityPlot(self.lambda_value)
         self.plot_density_window.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.plot_density_window.show()
 
     def plot_distribution(self):
-        self.plot_window = NormalPlot(self.mu, self.sigma)
+        self.plot_window = ExponPlot(self.lambda_value)
         self.plot_window.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.plot_window.show()
 
     def plot_reliability(self):
-        self.plot_reliability_window = NormalReliabilityPlot(self.mu, self.sigma)
+        self.plot_reliability_window = ExponReliabilityPlot(self.lambda_value)
         self.plot_reliability_window.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.plot_reliability_window.show()
-
-    def plot_failure_rate(self):
-        self.plot_failure_rate_window = NormalFailureRatePlot(self.mu, self.sigma)
-        self.plot_failure_rate_window.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
-        self.plot_failure_rate_window.show()
 
     def export_data(self):
         file_name, ext = QFileDialog.getSaveFileName(self, "Экспорт данных", "",

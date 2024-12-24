@@ -250,11 +250,11 @@ class BinomialWindow(QWidget):
             # Создаем объект ExcelWriter
             with pd.ExcelWriter(file_name, engine='openpyxl') as writer:
                 # Записываем данные в лист 'Poisson Data'
-                df.to_excel(writer, index=False, sheet_name='Poisson Data')
+                df.to_excel(writer, index=False, sheet_name='Binomial Data')
 
                 # Получаем объект Workbook для дальнейшего изменения
                 workbook = writer.book
-                sheet = workbook['Poisson Data']
+                sheet = workbook['Binomial Data']
 
                 sheet['C1'] = 'Размер выборки (n)'
                 sheet['C2'] = self.n
