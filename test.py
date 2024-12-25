@@ -1,35 +1,16 @@
-import sys
-import matplotlib
-matplotlib.use('QtAgg')
+from PyQt6.QtGui import QPainter
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QMainWindow, QStyleOption, QStyle
 
-from PyQt6 import QtCore, QtWidgets
+from PyQt6.QtCore import Qt
 
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
-from matplotlib.figure import Figure
+from windows.base_substrate import BaseSubstrate
+from windows.base_window import BaseWindow
 
+if __name__ == "__main__":
+    import sys
+    app = QApplication(sys.argv)
 
-class MplCanvas(FigureCanvasQTAgg):
-
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
-        fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = fig.add_subplot(111)
-        super().__init__(fig)
-
-
-class MainWindow(QtWidgets.QMainWindow):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # Create the maptlotlib FigureCanvas object,
-        # which defines a single set of axes as self.axes.
-        sc = MplCanvas(self, width=5, height=4, dpi=100)
-        sc.axes.plot([0,1,2,3,4], [10,1,20,3,40])
-        self.setCentralWidget(sc)
-
-        self.show()
-
-
-app = QtWidgets.QApplication(sys.argv)
-w = MainWindow()
-app.exec()
+    window = BaseWindow()
+    window.layout().addWidget(BaseSubstrate(window))
+    window.show()
+    sys.exit(app.exec())

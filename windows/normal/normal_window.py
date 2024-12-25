@@ -5,29 +5,20 @@ import pandas as pd
 from PyQt6.QtCore import Qt, QRegularExpression, QEvent, pyqtSignal
 from PyQt6.QtGui import QIntValidator, QValidator, QRegularExpressionValidator
 from PyQt6.QtWidgets import (
-    QVBoxLayout, QLabel, QLineEdit, QPushButton, QWidget, QFileDialog
+    QVBoxLayout, QLabel, QLineEdit, QPushButton, QWidget, QFileDialog, QHBoxLayout
 )
 
+from windows.base_button import BaseButton
+from windows.base_label import BaseLabel
+from windows.base_line_edit import BaseLineEdit, FocusOutLineEdit
+from windows.base_substrate import BaseSubstrate
+from windows.base_window import BaseWindow
 from windows.normal.normal_plot import NormalDensityPlot, NormalPlot, NormalReliabilityPlot, NormalFailureRatePlot
 import scipy.stats as stats
 
 from decimal import Decimal
 
-
-class FocusOutLineEdit(QLineEdit):
-    # Сигнал, который будет испускаться при потере фокуса
-    focusLost = pyqtSignal()
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-
-    def focusOutEvent(self, event: QEvent):
-        # Вызываем сигнал при потере фокуса
-        self.focusLost.emit()
-        super().focusOutEvent(event)
-
-
-class NormalWindow(QWidget):
+class NormalWindow(BaseWindow):
 
     inputs_validated = pyqtSignal(bool)
 
@@ -45,8 +36,6 @@ class NormalWindow(QWidget):
         super().__init__(parent)
 
         self.setWindowTitle("Нормальное распределение")
-        self.resize(400, 300)
-        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
         # Параметры
         self.mu = 0     # Среднее время до отказа
@@ -65,169 +54,182 @@ class NormalWindow(QWidget):
 
         self.check = False
 
-        # Основной макет
-        layout = QVBoxLayout(self)
-        self.setLayout(layout)
-
-        self.mu_label = QLabel("Среднее время до отказа (μ):")
-        self.mu_input = FocusOutLineEdit()
+        sub = BaseSubstrate(self)
+        self.layout().addWidget(sub)
+        self.mu_label = BaseLabel("Среднее время до отказа (μ):", sub)
+        self.mu_input = FocusOutLineEdit(sub)
         self.mu_input.setPlaceholderText("Введите среднее время до отказа")
         regex = QRegularExpression(r"^\d*(\.\d+)?$")
         double_validator = QRegularExpressionValidator(regex)
         self.mu_input.setValidator(double_validator)
-        layout.addWidget(self.mu_label)
-        layout.addWidget(self.mu_input)
+        sub.layout().addWidget(self.mu_label)
+        sub.layout().addWidget(self.mu_input)
         self.mu_input.textChanged.connect(lambda _ : self.validate_number(self.mu_input))
         self.mu_input.textChanged.connect(lambda _: self.validate_inputs())
 
 
-        self.sigma_label = QLabel("Стандартное отклонение (σ):")
-        self.sigma_input = FocusOutLineEdit()
+        sub = BaseSubstrate(self)
+        self.layout().addWidget(sub)
+        self.sigma_label = BaseLabel("Стандартное отклонение (σ):", sub)
+        self.sigma_input = FocusOutLineEdit(sub)
         self.sigma_input.setPlaceholderText("Введите стандартное отклонение")
         regex = QRegularExpression(r"^(?!0$)(?!0\.0+$)\d+(\.\d+)?$")
         double_validator = QRegularExpressionValidator(regex)
         self.sigma_input.setValidator(double_validator)
-        layout.addWidget(self.sigma_label)
-        layout.addWidget(self.sigma_input)
+        sub.layout().addWidget(self.sigma_label)
+        sub.layout().addWidget(self.sigma_input)
         self.sigma_input.textChanged.connect(lambda _ : self.validate_number(self.sigma_input))
         self.sigma_input.textChanged.connect(lambda _: self.validate_inputs())
 
-        self.plot_distribution_density_btn = QPushButton("Построить график плотности распределения")
-        layout.addWidget(self.plot_distribution_density_btn)
+        self.plot_distribution_density_btn = BaseButton("Построить график плотности распределения")
+        self.layout().addWidget(self.plot_distribution_density_btn)
         self.plot_distribution_density_btn.clicked.connect(self.plot_distribution_density)
         self.inputs_validated.connect(self.plot_distribution_density_btn.setEnabled)
         self.plot_distribution_density_btn.setEnabled(False)
 
 
-        self.plot_distribution_btn = QPushButton("Построить график распределения")
-        layout.addWidget(self.plot_distribution_btn)
+        self.plot_distribution_btn = BaseButton("Построить график распределения")
+        self.layout().addWidget(self.plot_distribution_btn)
         self.plot_distribution_btn.clicked.connect(self.plot_distribution)
         self.inputs_validated.connect(self.plot_distribution_btn.setEnabled)
         self.plot_distribution_btn.setEnabled(False)
 
 
-        self.plot_reliability_btn = QPushButton("Построить график вероятности безотказной работы")
-        layout.addWidget(self.plot_reliability_btn)
+        self.plot_reliability_btn = BaseButton("Построить график вероятности безотказной работы")
+        self.layout().addWidget(self.plot_reliability_btn)
         self.plot_reliability_btn.clicked.connect(self.plot_reliability)
         self.inputs_validated.connect(self.plot_reliability_btn.setEnabled)
         self.plot_reliability_btn.setEnabled(False)
 
 
-        self.plot_failure_rate_btn = QPushButton("Построить график интенсивности отказов")
-        layout.addWidget(self.plot_failure_rate_btn)
+        self.plot_failure_rate_btn = BaseButton("Построить график интенсивности отказов")
+        self.layout().addWidget(self.plot_failure_rate_btn)
         self.plot_failure_rate_btn.clicked.connect(self.plot_failure_rate)
         self.inputs_validated.connect(self.plot_failure_rate_btn.setEnabled)
         self.plot_failure_rate_btn.setEnabled(False)
 
+        sub = BaseSubstrate(self)
+        self.layout().addWidget(sub)
+        tmp = QWidget(sub)
+        sub.layout().addWidget(tmp)
+        tmp.setLayout(QVBoxLayout())
+        tmp2 = QWidget(tmp)
+        tmp.layout().addWidget(tmp2)
+        tmp2.setLayout(QHBoxLayout())
 
-        self.time_label = QLabel("Время (t):")
-        self.time_input = FocusOutLineEdit()
+        self.time_label = BaseLabel("Время (t):", tmp2)
+        self.time_input = FocusOutLineEdit(tmp2)
         self.time_input.setPlaceholderText("Введите время")
         regex = QRegularExpression(r"^\d*(\.\d+)?$")
         double_validator = QRegularExpressionValidator(regex)
         self.time_input.setValidator(double_validator)
-        layout.addWidget(self.time_label)
-        layout.addWidget(self.time_input)
+        tmp2.layout().addWidget(self.time_label)
+        tmp2.layout().addWidget(self.time_input)
         self.time_input.textChanged.connect(lambda _ : self.set_time())
+        tmp.layout().addWidget(tmp2)
 
         self.inputs_validated.connect(lambda _: self.calculate_with_time())
 
-        self.lambda_label = QLabel("Интенсивность отказа (λ(t)):")
-        self.lambda_input = QLineEdit()
+        self.lambda_label = BaseLabel("Интенсивность отказа (λ(t)):", tmp)
+        self.lambda_input = BaseLineEdit(tmp)
         self.lambda_input.setReadOnly(True)
-        layout.addWidget(self.lambda_label)
-        layout.addWidget(self.lambda_input)
+        tmp.layout().addWidget(self.lambda_label)
+        tmp.layout().addWidget(self.lambda_input)
         self.lambda_value_changed.connect(lambda value: self.lambda_input.setText(str(value))
                                                  if value is not None
                                                  else self.lambda_input.setText(""))
 
-        self.f_label = QLabel("Вероятность отказа при времени t (F(t)):")
-        self.f_input = QLineEdit()
+        self.f_label = BaseLabel("Вероятность отказа при времени t (F(t)):", tmp)
+        self.f_input = BaseLineEdit(tmp)
         self.f_input.setReadOnly(True)
-        layout.addWidget(self.f_label)
-        layout.addWidget(self.f_input)
+        tmp.layout().addWidget(self.f_label)
+        tmp.layout().addWidget(self.f_input)
         self.f_t_changed.connect(lambda value: self.f_input.setText(str(value))
                                         if value is not None
                                         else self.f_input.setText(""))
 
-        self.reliability_label = QLabel("Вероятность безотказной работы до времени t (R(t)):")
-        self.reliability_input = QLineEdit()
+        self.reliability_label = BaseLabel("Вероятность безотказной работы до времени t (R(t)):", tmp)
+        self.reliability_input = BaseLineEdit(tmp)
         self.reliability_input.setReadOnly(True)
-        layout.addWidget(self.reliability_label)
-        layout.addWidget(self.reliability_input)
+        tmp.layout().addWidget(self.reliability_label)
+        tmp.layout().addWidget(self.reliability_input)
         self.reliability_changed.connect(lambda value: self.reliability_input.setText(str(value))
                                                 if value is not None
                                                 else self.reliability_input.setText(""))
 
+        sub = BaseSubstrate(self)
+        self.layout().addWidget(sub)
+        tmp = QWidget(sub)
+        sub.layout().addWidget(tmp)
+        tmp.setLayout(QVBoxLayout())
+        tmp2 = QWidget(tmp)
+        tmp.layout().addWidget(tmp2)
+        tmp2.setLayout(QHBoxLayout())
 
-
-        self.reliability_level_label_title = QLabel("Определение времени наработки на отказ")
-        self.reliability_level_label = QLabel("Надежность:")
-        self.reliability_level_input = FocusOutLineEdit()
+        self.reliability_level_label_title = BaseLabel("Определение времени наработки на отказ", tmp)
+        self.reliability_level_label = BaseLabel("Надежность:", tmp2)
+        self.reliability_level_input = FocusOutLineEdit(tmp2)
         self.reliability_level_input.setPlaceholderText("Введите надежность")
         regex = QRegularExpression(r"^0(\.\d+)?|1(\.0+)?$")
         double_validator = QRegularExpressionValidator(regex)
         self.reliability_level_input.setValidator(double_validator)
-        layout.addWidget(self.reliability_level_label_title)
-        layout.addWidget(self.reliability_level_label)
-        layout.addWidget(self.reliability_level_input)
+        tmp.layout().addWidget(self.reliability_level_label_title)
+        tmp2.layout().addWidget(self.reliability_level_label)
+        tmp2.layout().addWidget(self.reliability_level_input)
         self.reliability_level_input.textChanged.connect(lambda _ : self.set_reliability_level())
+        tmp.layout().addWidget(tmp2)
 
-        self.time_for_reliability_label = QLabel("Время наработки на отказ:")
-        self.time_for_reliability_input = QLineEdit()
+        self.time_for_reliability_label = BaseLabel("Время наработки на отказ:", tmp)
+        self.time_for_reliability_input = BaseLineEdit(tmp)
         self.time_for_reliability_input.setReadOnly(True)
-        layout.addWidget(self.time_for_reliability_label)
-        layout.addWidget(self.time_for_reliability_input)
+        tmp.layout().addWidget(self.time_for_reliability_label)
+        tmp.layout().addWidget(self.time_for_reliability_input)
         self.time_for_reliability_changed.connect(lambda value: self.time_for_reliability_input.setText(str(value))
                                                 if value is not None
                                                 else self.time_for_reliability_input.setText(""))
 
         self.inputs_validated.connect(lambda _: self.calculate_time_for_reliability())
 
+        sub = BaseSubstrate(self)
+        self.layout().addWidget(sub)
+        tmp = QWidget(sub)
+        sub.layout().addWidget(tmp)
+        tmp.setLayout(QVBoxLayout())
+        tmp2 = QWidget(tmp)
+        tmp.layout().addWidget(tmp2)
+        tmp2.setLayout(QHBoxLayout())
 
-
-        self.max_failure_probability_label_title = QLabel("Рассчитать минимальное время до замены")
-        self.max_failure_probability_label = QLabel("Вероятность отказа:")
-        self.max_failure_probability_input = FocusOutLineEdit()
+        self.max_failure_probability_label_title = BaseLabel("Рассчитать минимальное время до замены", tmp)
+        self.max_failure_probability_label = BaseLabel("Вероятность отказа:", tmp2)
+        self.max_failure_probability_input = FocusOutLineEdit(tmp2)
         self.max_failure_probability_input.setPlaceholderText("Введите вероятность отказа")
         regex = QRegularExpression(r"^0(\.\d+)?|1(\.0+)?$")
         double_validator = QRegularExpressionValidator(regex)
         self.max_failure_probability_input.setValidator(double_validator)
-        layout.addWidget(self.max_failure_probability_label_title)
-        layout.addWidget(self.max_failure_probability_label)
-        layout.addWidget(self.max_failure_probability_input)
+        tmp.layout().addWidget(self.max_failure_probability_label_title)
+        tmp2.layout().addWidget(self.max_failure_probability_label)
+        tmp2.layout().addWidget(self.max_failure_probability_input)
         self.max_failure_probability_input.textChanged.connect(lambda _ : self.set_max_failure_probability())
+        tmp.layout().addWidget(tmp2)
 
-        self.replacement_time_label = QLabel("Минимальное время замены:")
-        self.replacement_time_input = QLineEdit()
+        self.replacement_time_label = BaseLabel("Минимальное время замены:", tmp)
+        self.replacement_time_input = BaseLineEdit(tmp)
         self.replacement_time_input.setReadOnly(True)
-        layout.addWidget(self.replacement_time_label)
-        layout.addWidget(self.replacement_time_input)
+        tmp.layout().addWidget(self.replacement_time_label)
+        tmp.layout().addWidget(self.replacement_time_input)
         self.replacement_time_changed.connect(lambda value: self.replacement_time_input.setText(str(value))
                                                 if value is not None
                                                 else self.replacement_time_input.setText(""))
 
         self.inputs_validated.connect(lambda _: self.calculate_replacement_time())
 
-        self.export_btn = QPushButton("Экспортировать данные")
-        layout.addWidget(self.export_btn)
+        self.export_btn = BaseButton("Экспортировать данные")
+        self.layout().addWidget(self.export_btn)
         self.export_btn.clicked.connect(self.export_data)
         self.inputs_validated.connect(self.export_btn.setEnabled)
         self.export_btn.setEnabled(False)
 
-    def validate_number(self, input_num: QLineEdit):
-        if input_num.text() == "":
-            input_num.setStyleSheet("color: black;")
-            return False
 
-        text = input_num.text()
-        check = input_num.validator().validate(text, 0)[0]
-        if check != QValidator.State.Acceptable:
-            input_num.setStyleSheet("color: red;")
-            return False
-
-        input_num.setStyleSheet("color: black;")
-        return True
 
 
     def calculate_with_time(self):

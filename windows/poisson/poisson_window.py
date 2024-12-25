@@ -5,29 +5,21 @@ import pandas as pd
 from PyQt6.QtCore import Qt, QRegularExpression, QEvent, pyqtSignal
 from PyQt6.QtGui import QIntValidator, QValidator, QRegularExpressionValidator
 from PyQt6.QtWidgets import (
-    QVBoxLayout, QLabel, QLineEdit, QPushButton, QWidget, QFileDialog
+    QVBoxLayout, QLabel, QLineEdit, QPushButton, QWidget, QFileDialog, QHBoxLayout
 )
 
+from windows.base_button import BaseButton
+from windows.base_label import BaseLabel
+from windows.base_line_edit import BaseLineEdit, FocusOutLineEdit
+from windows.base_substrate import BaseSubstrate
+from windows.base_window import BaseWindow
 from windows.poisson.poisson_plot import PoissonDensityPlot, PoissonPlot
 import scipy.stats as stats
 
 from decimal import Decimal
 
 
-class FocusOutLineEdit(QLineEdit):
-    # Сигнал, который будет испускаться при потере фокуса
-    focusLost = pyqtSignal()
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-
-    def focusOutEvent(self, event: QEvent):
-        # Вызываем сигнал при потере фокуса
-        self.focusLost.emit()
-        super().focusOutEvent(event)
-
-
-class PoissonWindow(QWidget):
+class PoissonWindow(BaseWindow):
 
     inputs_validated = pyqtSignal(bool)
     n_changed = pyqtSignal(int)
@@ -36,8 +28,6 @@ class PoissonWindow(QWidget):
         super().__init__(parent)
 
         self.setWindowTitle("Распределение Пуассона")
-        self.resize(400, 300)
-        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
 
         # Параметры
         self.n = 0  # Количество испытаний
@@ -51,112 +41,119 @@ class PoissonWindow(QWidget):
 
         self.check = False
 
-        # Основной макет
-        layout = QVBoxLayout(self)
-        self.setLayout(layout)
+        sub = BaseSubstrate(self)
+        self.layout().addWidget(sub)
 
-        self.n_label = QLabel("Количество испытаний (n):")
-        self.n_input = QLineEdit()
+        self.n_label = BaseLabel("Количество испытаний (n):", sub)
+        self.n_input = BaseLineEdit(sub)
         self.n_input.setPlaceholderText("Введите количество испытаний")
         self.n_input.setValidator(QIntValidator(1, 9999999))
-        layout.addWidget(self.n_label)
-        layout.addWidget(self.n_input)
+        sub.layout().addWidget(self.n_label)
+        sub.layout().addWidget(self.n_input)
         self.n_input.textChanged.connect(lambda _ : self.validate_number(self.n_input))
         self.n_input.textChanged.connect(lambda _ : self.validate_inputs())
 
-        self.p_label = QLabel("Вероятность успеха (p):")
-        self.p_input = FocusOutLineEdit()
+
+        sub = BaseSubstrate(self)
+        self.layout().addWidget(sub)
+
+        self.p_label = BaseLabel("Вероятность успеха (p):", sub)
+        self.p_input = FocusOutLineEdit(sub)
         self.p_input.setPlaceholderText("Введите вероятность успеха")
         regex = QRegularExpression(r"^0(\.\d+)?|1(\.0+)?$")
         double_validator = QRegularExpressionValidator(regex)
         self.p_input.setValidator(double_validator)
-        layout.addWidget(self.p_label)
-        layout.addWidget(self.p_input)
+        sub.layout().addWidget(self.p_label)
+        sub.layout().addWidget(self.p_input)
         self.p_input.textChanged.connect(lambda _ : self.validate_number(self.p_input))
         self.p_input.textChanged.connect(lambda _ : self.calculate_q() if self.p_input.hasFocus() else None)
         self.p_input.focusLost.connect(self.calculate_p)
         self.p_input.textChanged.connect(lambda _: self.validate_inputs())
 
 
-        self.q_label = QLabel("Вероятность неудачи (q):")
-        self.q_input = FocusOutLineEdit()
+        sub = BaseSubstrate(self)
+        self.layout().addWidget(sub)
+
+        self.q_label = BaseLabel("Вероятность неудачи (q):", sub)
+        self.q_input = FocusOutLineEdit(sub)
         self.q_input.setPlaceholderText("Введите вероятность неудачи")
         regex = QRegularExpression(r"^0(\.\d+)?|1(\.0+)?$")
         double_validator = QRegularExpressionValidator(regex)
         self.q_input.setValidator(double_validator)
-        layout.addWidget(self.q_label)
-        layout.addWidget(self.q_input)
+        sub.layout().addWidget(self.q_label)
+        sub.layout().addWidget(self.q_input)
         self.q_input.textChanged.connect(lambda _ : self.validate_number(self.q_input))
         self.q_input.textChanged.connect(lambda _ : self.calculate_p() if self.q_input.hasFocus() else None)
         self.q_input.focusLost.connect(self.calculate_q)
         self.q_input.textChanged.connect(lambda _: self.validate_inputs())
 
-        self.lambda_label = QLabel("Интенсивность отказов (λ):")
-        self.lambda_input = QLineEdit()
+
+        sub = BaseSubstrate(self)
+        self.layout().addWidget(sub)
+
+        self.lambda_label = BaseLabel("Интенсивность отказов (λ):", sub)
+        self.lambda_input = BaseLineEdit(sub)
         self.lambda_input.setReadOnly(True)
-        layout.addWidget(self.lambda_label)
-        layout.addWidget(self.lambda_input)
+        sub.layout().addWidget(self.lambda_label)
+        sub.layout().addWidget(self.lambda_input)
         self.inputs_validated.connect(lambda _ : self.lambda_input.setText(str(self.lambda_value)))
 
 
-        self.plot_distribution_density_btn = QPushButton("Построить график плотности распределения")
-        layout.addWidget(self.plot_distribution_density_btn)
+        self.plot_distribution_density_btn = BaseButton("Построить график плотности распределения")
+        self.layout().addWidget(self.plot_distribution_density_btn)
         self.plot_distribution_density_btn.clicked.connect(self.plot_distribution_density)
         self.inputs_validated.connect(self.plot_distribution_density_btn.setEnabled)
         self.plot_distribution_density_btn.setEnabled(False)
 
 
-        self.plot_distribution_btn = QPushButton("Построить график распределения")
-        layout.addWidget(self.plot_distribution_btn)
+        self.plot_distribution_btn = BaseButton("Построить график распределения")
+        self.layout().addWidget(self.plot_distribution_btn)
         self.plot_distribution_btn.clicked.connect(self.plot_distribution)
         self.inputs_validated.connect(self.plot_distribution_btn.setEnabled)
         self.plot_distribution_btn.setEnabled(False)
 
-        self.k_label = QLabel("Количество событий (k):")
-        self.k_input = QLineEdit()
+        sub = BaseSubstrate(self)
+        self.layout().addWidget(sub)
+        tmp = QWidget(sub)
+        sub.layout().addWidget(tmp)
+        tmp.setLayout(QVBoxLayout())
+        tmp2 = QWidget(tmp)
+        tmp.layout().addWidget(tmp2)
+        tmp2.setLayout(QHBoxLayout())
+
+        self.k_label = BaseLabel("Количество событий (k):", tmp2)
+        self.k_input = BaseLineEdit(tmp2)
         self.k_input.setPlaceholderText("Введите количество событий")
         self.k_input.setValidator(QIntValidator(0, 9999999))
-        layout.addWidget(self.k_label)
-        layout.addWidget(self.k_input)
+        tmp2.layout().addWidget(self.k_label)
+        tmp2.layout().addWidget(self.k_input)
         self.k_input.textChanged.connect(lambda _ : self.validate_number(self.k_input))
         self.k_input.textChanged.connect(lambda _ : self.calculate_probability_eq())
         self.k_input.textChanged.connect(lambda _ : self.calculate_probability_eq_less())
         self.n_input.textChanged.connect(lambda _ : self.change_k_validator())
 
-        self.probability_eq_label = QLabel("Вероятность безотказной работы (P(X = k)):")
-        self.probability_eq_input = QLineEdit()
+        self.probability_eq_label = BaseLabel("Вероятность безотказной работы (P(X = k)):", tmp)
+        self.probability_eq_input = BaseLineEdit(tmp)
         self.probability_eq_input.setReadOnly(True)
-        layout.addWidget(self.probability_eq_label)
-        layout.addWidget(self.probability_eq_input)
+        tmp.layout().addWidget(self.probability_eq_label)
+        tmp.layout().addWidget(self.probability_eq_input)
         self.n_changed.connect(lambda _ : self.calculate_probability_eq())
 
-        self.probability_eq_less_label = QLabel("Вероятность безотказной работы (P(X ≤ k)):")
-        self.probability_eq_less_input = QLineEdit()
+        self.probability_eq_less_label = BaseLabel("Вероятность безотказной работы (P(X ≤ k)):", tmp)
+        self.probability_eq_less_input = BaseLineEdit(tmp)
         self.probability_eq_less_input.setReadOnly(True)
-        layout.addWidget(self.probability_eq_less_label)
-        layout.addWidget(self.probability_eq_less_input)
+        tmp.layout().addWidget(self.probability_eq_less_label)
+        tmp.layout().addWidget(self.probability_eq_less_input)
         self.n_changed.connect(lambda _ : self.calculate_probability_eq_less())
 
 
-        self.export_btn = QPushButton("Экспортировать данные")
-        layout.addWidget(self.export_btn)
+        self.export_btn = BaseButton("Экспортировать данные")
+        self.layout().addWidget(self.export_btn)
         self.export_btn.clicked.connect(self.export_data)
         self.inputs_validated.connect(self.export_btn.setEnabled)
         self.export_btn.setEnabled(False)
 
-    def validate_number(self, input_num: QLineEdit):
-        if input_num.text() == "":
-            input_num.setStyleSheet("color: black;")
-            return False
 
-        text = input_num.text()
-        check = input_num.validator().validate(text, 0)[0]
-        if check != QValidator.State.Acceptable:
-            input_num.setStyleSheet("color: red;")
-            return False
-
-        input_num.setStyleSheet("color: black;")
-        return True
 
     def change_k_validator(self):
         top = self.n
