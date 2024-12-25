@@ -2,10 +2,10 @@ import os
 
 import numpy as np
 import pandas as pd
-from PyQt6.QtCore import Qt, QRegularExpression, QEvent, pyqtSignal
-from PyQt6.QtGui import QIntValidator, QValidator, QRegularExpressionValidator
+from PyQt6.QtCore import Qt, QRegularExpression, pyqtSignal
+from PyQt6.QtGui import QRegularExpressionValidator
 from PyQt6.QtWidgets import (
-    QVBoxLayout, QLabel, QLineEdit, QPushButton, QWidget, QFileDialog, QHBoxLayout
+    QVBoxLayout, QWidget, QFileDialog, QHBoxLayout
 )
 
 from windows.base_button import BaseButton
@@ -89,27 +89,28 @@ class ExponWindow(BaseWindow):
         self.inputs_validated.connect(self.plot_reliability_btn.setEnabled)
         self.plot_reliability_btn.setEnabled(False)
 
-
-        sub = BaseSubstrate(self)
-        self.layout().addWidget(sub)
-        self.time_label = BaseLabel("Время (t):", sub)
-        self.time_input = FocusOutLineEdit(sub)
-        self.time_input.setPlaceholderText("Введите время")
-        regex = QRegularExpression(r"^\d*(\.\d+)?$")
-        double_validator = QRegularExpressionValidator(regex)
-        self.time_input.setValidator(double_validator)
-        sub.layout().addWidget(self.time_label)
-        sub.layout().addWidget(self.time_input)
-        self.time_input.textChanged.connect(lambda _ : self.set_time())
-
-        self.inputs_validated.connect(lambda _: self.calculate_with_time())
-
-
         sub = BaseSubstrate(self)
         self.layout().addWidget(sub)
         tmp = QWidget(sub)
         sub.layout().addWidget(tmp)
         tmp.setLayout(QVBoxLayout())
+        tmp2 = QWidget(tmp)
+        tmp.layout().addWidget(tmp2)
+        tmp2.setLayout(QHBoxLayout())
+
+        self.time_label = BaseLabel("Время (t):", tmp2)
+        self.time_input = FocusOutLineEdit(tmp2)
+        self.time_input.setPlaceholderText("Введите время")
+        regex = QRegularExpression(r"^\d*(\.\d+)?$")
+        double_validator = QRegularExpressionValidator(regex)
+        self.time_input.setValidator(double_validator)
+        tmp2.layout().addWidget(self.time_label)
+        tmp2.layout().addWidget(self.time_input)
+        self.time_input.textChanged.connect(lambda _ : self.set_time())
+
+        self.inputs_validated.connect(lambda _: self.calculate_with_time())
+        tmp.layout().addWidget(tmp2)
+
 
         self.f_label = BaseLabel("Вероятность безотказной работы до времени t (R(t)):", tmp)
         self.f_input = BaseLineEdit(tmp)

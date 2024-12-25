@@ -1,10 +1,7 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QStandardItemModel, QStandardItem
 from PyQt6.QtWidgets import (
-    QMainWindow,
-    QWidget,
-    QGridLayout,
-    QListView,
+    QMainWindow, QWidget, QGridLayout,
 )
 
 from windows.base_list_view import BaseListView
@@ -28,7 +25,7 @@ class MainWindow(QMainWindow):
                 }''')
         self.resize(800, 600)
 
-        self.setCentralWidget(QWidget())
+        self.setCentralWidget(QWidget(self))
 
         # Основная сетка
         grid = QGridLayout()

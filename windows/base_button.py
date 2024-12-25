@@ -1,8 +1,4 @@
-from PyQt6.QtWidgets import (
-    QPushButton
-)
-
-
+from PyQt6.QtWidgets import QPushButton
 
 class BaseButton(QPushButton):
 

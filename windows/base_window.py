@@ -12,7 +12,7 @@ class BaseWindow(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.resize(400, 300)
+        self.resize(450, 200)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         self.setStyleSheet('''
         BaseWindow {

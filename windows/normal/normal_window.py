@@ -2,10 +2,10 @@ import os
 
 import numpy as np
 import pandas as pd
-from PyQt6.QtCore import Qt, QRegularExpression, QEvent, pyqtSignal
-from PyQt6.QtGui import QIntValidator, QValidator, QRegularExpressionValidator
+from PyQt6.QtCore import Qt, QRegularExpression, pyqtSignal
+from PyQt6.QtGui import QRegularExpressionValidator
 from PyQt6.QtWidgets import (
-    QVBoxLayout, QLabel, QLineEdit, QPushButton, QWidget, QFileDialog, QHBoxLayout
+    QVBoxLayout, QWidget, QFileDialog, QHBoxLayout
 )
 
 from windows.base_button import BaseButton

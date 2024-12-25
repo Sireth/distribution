@@ -1,7 +1,5 @@
 from PyQt6.QtCore import pyqtSignal, QEvent
-from PyQt6.QtWidgets import (
-    QLineEdit
-)
+from PyQt6.QtWidgets import QLineEdit
 
 class BaseLineEdit(QLineEdit):
 

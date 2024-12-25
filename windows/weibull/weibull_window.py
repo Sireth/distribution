@@ -5,7 +5,7 @@ import pandas as pd
 from PyQt6.QtCore import Qt, QRegularExpression, QEvent, pyqtSignal
 from PyQt6.QtGui import QIntValidator, QValidator, QRegularExpressionValidator
 from PyQt6.QtWidgets import (
-    QLabel, QLineEdit, QPushButton, QFileDialog, QWidget, QVBoxLayout, QHBoxLayout
+    QFileDialog, QWidget, QVBoxLayout, QHBoxLayout
 )
 
 from windows.base_button import BaseButton
@@ -184,8 +184,8 @@ class WeibullWindow(BaseWindow):
         self.time_for_reliability_label = BaseLabel("Время наработки на отказ:", tmp)
         self.time_for_reliability_input = BaseLineEdit(tmp)
         self.time_for_reliability_input.setReadOnly(True)
-        self.layout().addWidget(self.time_for_reliability_label)
-        self.layout().addWidget(self.time_for_reliability_input)
+        tmp.layout().addWidget(self.time_for_reliability_label)
+        tmp.layout().addWidget(self.time_for_reliability_input)
         self.time_for_reliability_changed.connect(lambda value: self.time_for_reliability_input.setText(str(value))
                                                 if value is not None
                                                 else self.time_for_reliability_input.setText(""))
@@ -217,8 +217,8 @@ class WeibullWindow(BaseWindow):
         self.replacement_time_label = BaseLabel("Минимальное время замены:", tmp)
         self.replacement_time_input = BaseLineEdit(tmp)
         self.replacement_time_input.setReadOnly(True)
-        self.layout().addWidget(self.replacement_time_label)
-        self.layout().addWidget(self.replacement_time_input)
+        tmp.layout().addWidget(self.replacement_time_label)
+        tmp.layout().addWidget(self.replacement_time_input)
         self.replacement_time_changed.connect(lambda value: self.replacement_time_input.setText(str(value))
                                                 if value is not None
                                                 else self.replacement_time_input.setText(""))

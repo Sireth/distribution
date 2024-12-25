@@ -1,11 +1,9 @@
 import os
-import sys
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas as pd
 from PyQt6.QtGui import QPainter, QImage
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
-from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog
+from PyQt6.QtWidgets import QApplication, QFileDialog
 import scipy.stats as stats
 
 from windows.base_button import BaseButton
