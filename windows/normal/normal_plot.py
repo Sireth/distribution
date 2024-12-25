@@ -8,7 +8,11 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog
 import scipy.stats as stats
 
-class NormalDensityPlot(QWidget):
+from windows.base_button import BaseButton
+from windows.base_window import BaseWindow
+
+
+class NormalDensityPlot(BaseWindow):
     def __init__(self, mu, sigma):
         super().__init__()
 
@@ -24,18 +28,16 @@ class NormalDensityPlot(QWidget):
         self.canvas = FigureCanvasQTAgg(self.figure)
 
         # Добавляем холст в макет
-        layout = QVBoxLayout()
-        layout.addWidget(self.canvas)
-        self.setLayout(layout)
+        self.layout().addWidget(self.canvas)
 
         # Кнопки для сохранения и копирования графика
-        self.save_button = QPushButton("Сохранить график")
-        self.copy_button = QPushButton("Копировать график")
+        self.save_button = BaseButton("Сохранить график")
+        self.copy_button = BaseButton("Копировать график")
         self.save_button.clicked.connect(self.save_plot)
         self.copy_button.clicked.connect(self.copy_plot)
 
-        layout.addWidget(self.save_button)
-        layout.addWidget(self.copy_button)
+        self.layout().addWidget(self.save_button)
+        self.layout().addWidget(self.copy_button)
 
         self.time = np.linspace(float(self.mu - 4 * self.sigma), float(self.mu + 4 * self.sigma), 1000)
         self.pdf_values = stats.norm.pdf(self.time, loc=float(mu), scale=float(sigma))
@@ -94,7 +96,7 @@ class NormalDensityPlot(QWidget):
         clipboard = QApplication.clipboard()
         clipboard.setImage(image)
 
-class NormalPlot(QWidget):
+class NormalPlot(BaseWindow):
     def __init__(self, mu, sigma):
         super().__init__()
 
@@ -110,18 +112,16 @@ class NormalPlot(QWidget):
         self.canvas = FigureCanvasQTAgg(self.figure)
 
         # Добавляем холст в макет
-        layout = QVBoxLayout()
-        layout.addWidget(self.canvas)
-        self.setLayout(layout)
+        self.layout().addWidget(self.canvas)
 
         # Кнопки для сохранения и копирования графика
-        self.save_button = QPushButton("Сохранить график")
-        self.copy_button = QPushButton("Копировать график")
+        self.save_button = BaseButton("Сохранить график")
+        self.copy_button = BaseButton("Копировать график")
         self.save_button.clicked.connect(self.save_plot)
         self.copy_button.clicked.connect(self.copy_plot)
 
-        layout.addWidget(self.save_button)
-        layout.addWidget(self.copy_button)
+        self.layout().addWidget(self.save_button)
+        self.layout().addWidget(self.copy_button)
 
         self.time = np.linspace(float(self.mu - 4 * self.sigma), float(self.mu + 4 * self.sigma), 1000)
         self.cdf_values = stats.norm.cdf(self.time, loc=float(mu), scale=float(sigma))
@@ -180,7 +180,7 @@ class NormalPlot(QWidget):
         clipboard.setImage(image)
 
 
-class NormalReliabilityPlot(QWidget):
+class NormalReliabilityPlot(BaseWindow):
     def __init__(self, mu, sigma):
         super().__init__()
 
@@ -196,18 +196,16 @@ class NormalReliabilityPlot(QWidget):
         self.canvas = FigureCanvasQTAgg(self.figure)
 
         # Добавляем холст в макет
-        layout = QVBoxLayout()
-        layout.addWidget(self.canvas)
-        self.setLayout(layout)
+        self.layout().addWidget(self.canvas)
 
         # Кнопки для сохранения и копирования графика
-        self.save_button = QPushButton("Сохранить график")
-        self.copy_button = QPushButton("Копировать график")
+        self.save_button = BaseButton("Сохранить график")
+        self.copy_button = BaseButton("Копировать график")
         self.save_button.clicked.connect(self.save_plot)
         self.copy_button.clicked.connect(self.copy_plot)
 
-        layout.addWidget(self.save_button)
-        layout.addWidget(self.copy_button)
+        self.layout().addWidget(self.save_button)
+        self.layout().addWidget(self.copy_button)
 
         self.time = np.linspace(float(self.mu - 4 * self.sigma), float(self.mu + 4 * self.sigma), 1000)
         self.cdf_values = stats.norm.cdf(self.time, loc=float(mu), scale=float(sigma))
@@ -268,7 +266,7 @@ class NormalReliabilityPlot(QWidget):
 
 
 
-class NormalFailureRatePlot(QWidget):
+class NormalFailureRatePlot(BaseWindow):
     def __init__(self, mu, sigma):
         super().__init__()
 
@@ -284,18 +282,16 @@ class NormalFailureRatePlot(QWidget):
         self.canvas = FigureCanvasQTAgg(self.figure)
 
         # Добавляем холст в макет
-        layout = QVBoxLayout()
-        layout.addWidget(self.canvas)
-        self.setLayout(layout)
+        self.layout().addWidget(self.canvas)
 
         # Кнопки для сохранения и копирования графика
-        self.save_button = QPushButton("Сохранить график")
-        self.copy_button = QPushButton("Копировать график")
+        self.save_button = BaseButton("Сохранить график")
+        self.copy_button = BaseButton("Копировать график")
         self.save_button.clicked.connect(self.save_plot)
         self.copy_button.clicked.connect(self.copy_plot)
 
-        layout.addWidget(self.save_button)
-        layout.addWidget(self.copy_button)
+        self.layout().addWidget(self.save_button)
+        self.layout().addWidget(self.copy_button)
 
         self.time = np.linspace(float(self.mu - 4 * self.sigma), float(self.mu + 4 * self.sigma), 1000)
         self.cdf_values = stats.norm.cdf(self.time, loc=float(mu), scale=float(sigma))

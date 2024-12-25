@@ -8,7 +8,11 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog
 import scipy.stats as stats
 
-class WeibullDensityPlot(QWidget):
+from windows.base_button import BaseButton
+from windows.base_window import BaseWindow
+
+
+class WeibullDensityPlot(BaseWindow):
     def __init__(self, shape_k, scale_lambda):
         super().__init__()
 
@@ -24,18 +28,16 @@ class WeibullDensityPlot(QWidget):
         self.canvas = FigureCanvasQTAgg(self.figure)
 
         # Добавляем холст в макет
-        layout = QVBoxLayout()
-        layout.addWidget(self.canvas)
-        self.setLayout(layout)
+        self.layout().addWidget(self.canvas)
 
         # Кнопки для сохранения и копирования графика
-        self.save_button = QPushButton("Сохранить график")
-        self.copy_button = QPushButton("Копировать график")
+        self.save_button = BaseButton("Сохранить график")
+        self.copy_button = BaseButton("Копировать график")
         self.save_button.clicked.connect(self.save_plot)
         self.copy_button.clicked.connect(self.copy_plot)
 
-        layout.addWidget(self.save_button)
-        layout.addWidget(self.copy_button)
+        self.layout().addWidget(self.save_button)
+        self.layout().addWidget(self.copy_button)
 
         time_upper_limit = stats.weibull_min.ppf(0.99, c=float(shape_k), scale=float(self.scale_lambda))  # 99% охвата значений
         self.time = np.linspace(0, time_upper_limit, 1000)
@@ -96,7 +98,7 @@ class WeibullDensityPlot(QWidget):
         clipboard = QApplication.clipboard()
         clipboard.setImage(image)
 
-class WeibullPlot(QWidget):
+class WeibullPlot(BaseWindow):
     def __init__(self, shape_k, scale_lambda):
         super().__init__()
 
@@ -112,18 +114,16 @@ class WeibullPlot(QWidget):
         self.canvas = FigureCanvasQTAgg(self.figure)
 
         # Добавляем холст в макет
-        layout = QVBoxLayout()
-        layout.addWidget(self.canvas)
-        self.setLayout(layout)
+        self.layout().addWidget(self.canvas)
 
         # Кнопки для сохранения и копирования графика
-        self.save_button = QPushButton("Сохранить график")
-        self.copy_button = QPushButton("Копировать график")
+        self.save_button = BaseButton("Сохранить график")
+        self.copy_button = BaseButton("Копировать график")
         self.save_button.clicked.connect(self.save_plot)
         self.copy_button.clicked.connect(self.copy_plot)
 
-        layout.addWidget(self.save_button)
-        layout.addWidget(self.copy_button)
+        self.layout().addWidget(self.save_button)
+        self.layout().addWidget(self.copy_button)
 
         time_upper_limit = stats.weibull_min.ppf(0.99, c=float(shape_k), scale=float(self.scale_lambda))  # 99% охвата значений
         self.time = np.linspace(0, time_upper_limit, 1000)
@@ -183,7 +183,7 @@ class WeibullPlot(QWidget):
         clipboard.setImage(image)
 
 
-class WeibullReliabilityPlot(QWidget):
+class WeibullReliabilityPlot(BaseWindow):
     def __init__(self, shape_k, scale_lambda):
         super().__init__()
 
@@ -199,18 +199,16 @@ class WeibullReliabilityPlot(QWidget):
         self.canvas = FigureCanvasQTAgg(self.figure)
 
         # Добавляем холст в макет
-        layout = QVBoxLayout()
-        layout.addWidget(self.canvas)
-        self.setLayout(layout)
+        self.layout().addWidget(self.canvas)
 
         # Кнопки для сохранения и копирования графика
-        self.save_button = QPushButton("Сохранить график")
-        self.copy_button = QPushButton("Копировать график")
+        self.save_button = BaseButton("Сохранить график")
+        self.copy_button = BaseButton("Копировать график")
         self.save_button.clicked.connect(self.save_plot)
         self.copy_button.clicked.connect(self.copy_plot)
 
-        layout.addWidget(self.save_button)
-        layout.addWidget(self.copy_button)
+        self.layout().addWidget(self.save_button)
+        self.layout().addWidget(self.copy_button)
 
         time_upper_limit = stats.weibull_min.ppf(0.99, c=float(shape_k), scale=float(self.scale_lambda))  # 99% охвата значений
         self.time = np.linspace(0, time_upper_limit, 1000)
@@ -272,7 +270,7 @@ class WeibullReliabilityPlot(QWidget):
 
 
 
-class WeibullFailureRatePlot(QWidget):
+class WeibullFailureRatePlot(BaseWindow):
     def __init__(self, shape_k, scale_lambda):
         super().__init__()
 
@@ -288,18 +286,16 @@ class WeibullFailureRatePlot(QWidget):
         self.canvas = FigureCanvasQTAgg(self.figure)
 
         # Добавляем холст в макет
-        layout = QVBoxLayout()
-        layout.addWidget(self.canvas)
-        self.setLayout(layout)
+        self.layout().addWidget(self.canvas)
 
         # Кнопки для сохранения и копирования графика
-        self.save_button = QPushButton("Сохранить график")
-        self.copy_button = QPushButton("Копировать график")
+        self.save_button = BaseButton("Сохранить график")
+        self.copy_button = BaseButton("Копировать график")
         self.save_button.clicked.connect(self.save_plot)
         self.copy_button.clicked.connect(self.copy_plot)
 
-        layout.addWidget(self.save_button)
-        layout.addWidget(self.copy_button)
+        self.layout().addWidget(self.save_button)
+        self.layout().addWidget(self.copy_button)
 
         time_upper_limit = stats.weibull_min.ppf(0.99, c=float(shape_k), scale=float(self.scale_lambda))  # 99% охвата значений
         self.time = np.linspace(0, time_upper_limit, 1000)

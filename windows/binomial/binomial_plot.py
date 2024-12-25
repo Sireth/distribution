@@ -8,7 +8,11 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog
 import scipy.stats as stats
 
-class BinomialDensityPlot(QWidget):
+from windows.base_button import BaseButton
+from windows.base_window import BaseWindow
+
+
+class BinomialDensityPlot(BaseWindow):
     def __init__(self, n, p, q):
         super().__init__()
 
@@ -21,18 +25,16 @@ class BinomialDensityPlot(QWidget):
         self.canvas = FigureCanvasQTAgg(self.figure)
 
         # Добавляем холст в макет
-        layout = QVBoxLayout()
-        layout.addWidget(self.canvas)
-        self.setLayout(layout)
+        self.layout().addWidget(self.canvas)
 
         # Кнопки для сохранения и копирования графика
-        self.save_button = QPushButton("Сохранить график")
-        self.copy_button = QPushButton("Копировать график")
+        self.save_button = BaseButton("Сохранить график")
+        self.copy_button = BaseButton("Копировать график")
         self.save_button.clicked.connect(self.save_plot)
         self.copy_button.clicked.connect(self.copy_plot)
 
-        layout.addWidget(self.save_button)
-        layout.addWidget(self.copy_button)
+        self.layout().addWidget(self.save_button)
+        self.layout().addWidget(self.copy_button)
 
         self.k_values = np.arange(0, n + 1)
         self.pmf_values = stats.binom.pmf(self.k_values, n, float(p))
@@ -89,7 +91,7 @@ class BinomialDensityPlot(QWidget):
         clipboard = QApplication.clipboard()
         clipboard.setImage(image)
 
-class BinomialPlot(QWidget):
+class BinomialPlot(BaseWindow):
     def __init__(self, n, p, q):
         super().__init__()
 
@@ -102,18 +104,16 @@ class BinomialPlot(QWidget):
         self.canvas = FigureCanvasQTAgg(self.figure)
 
         # Добавляем холст в макет
-        layout = QVBoxLayout()
-        layout.addWidget(self.canvas)
-        self.setLayout(layout)
+        self.layout().addWidget(self.canvas)
 
         # Кнопки для сохранения и копирования графика
-        self.save_button = QPushButton("Сохранить график")
-        self.copy_button = QPushButton("Копировать график")
+        self.save_button = BaseButton("Сохранить график")
+        self.copy_button = BaseButton("Копировать график")
         self.save_button.clicked.connect(self.save_plot)
         self.copy_button.clicked.connect(self.copy_plot)
 
-        layout.addWidget(self.save_button)
-        layout.addWidget(self.copy_button)
+        self.layout().addWidget(self.save_button)
+        self.layout().addWidget(self.copy_button)
 
         self.k_values = np.arange(0, n + 1)
         self.pmf_values = stats.binom.cdf(self.k_values, n, float(p))

@@ -34,6 +34,9 @@ class ExponWindow(BaseWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
 
+        self.plot_density_window = None
+        self.plot_window = None
+        self.plot_reliability_window = None
         self.setWindowTitle("Экспоненциальное распределение")
 
         # Параметры

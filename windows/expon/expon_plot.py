@@ -8,7 +8,11 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QFileDialog
 import scipy.stats as stats
 
-class ExponDensityPlot(QWidget):
+from windows.base_button import BaseButton
+from windows.base_window import BaseWindow
+
+
+class ExponDensityPlot(BaseWindow):
     def __init__(self, lambda_value):
         super().__init__()
 
@@ -23,18 +27,16 @@ class ExponDensityPlot(QWidget):
         self.canvas = FigureCanvasQTAgg(self.figure)
 
         # Добавляем холст в макет
-        layout = QVBoxLayout()
-        layout.addWidget(self.canvas)
-        self.setLayout(layout)
+        self.layout().addWidget(self.canvas)
 
         # Кнопки для сохранения и копирования графика
-        self.save_button = QPushButton("Сохранить график")
-        self.copy_button = QPushButton("Копировать график")
+        self.save_button = BaseButton("Сохранить график")
+        self.copy_button = BaseButton("Копировать график")
         self.save_button.clicked.connect(self.save_plot)
         self.copy_button.clicked.connect(self.copy_plot)
 
-        layout.addWidget(self.save_button)
-        layout.addWidget(self.copy_button)
+        self.layout().addWidget(self.save_button)
+        self.layout().addWidget(self.copy_button)
 
         time_upper_limit = stats.expon.ppf(0.99, scale=float(1 / self.lambda_value))  # 99% охвата значений
         self.time = np.linspace(0, time_upper_limit, 1000)
@@ -95,7 +97,7 @@ class ExponDensityPlot(QWidget):
         clipboard = QApplication.clipboard()
         clipboard.setImage(image)
 
-class ExponPlot(QWidget):
+class ExponPlot(BaseWindow):
     def __init__(self, lambda_value):
         super().__init__()
 
@@ -110,18 +112,16 @@ class ExponPlot(QWidget):
         self.canvas = FigureCanvasQTAgg(self.figure)
 
         # Добавляем холст в макет
-        layout = QVBoxLayout()
-        layout.addWidget(self.canvas)
-        self.setLayout(layout)
+        self.layout().addWidget(self.canvas)
 
         # Кнопки для сохранения и копирования графика
-        self.save_button = QPushButton("Сохранить график")
-        self.copy_button = QPushButton("Копировать график")
+        self.save_button = BaseButton("Сохранить график")
+        self.copy_button = BaseButton("Копировать график")
         self.save_button.clicked.connect(self.save_plot)
         self.copy_button.clicked.connect(self.copy_plot)
 
-        layout.addWidget(self.save_button)
-        layout.addWidget(self.copy_button)
+        self.layout().addWidget(self.save_button)
+        self.layout().addWidget(self.copy_button)
 
         time_upper_limit = stats.expon.ppf(0.99, scale=float(1 / self.lambda_value))  # 99% охвата значений
         self.time = np.linspace(0, time_upper_limit, 1000)
@@ -182,7 +182,7 @@ class ExponPlot(QWidget):
         clipboard.setImage(image)
 
 
-class ExponReliabilityPlot(QWidget):
+class ExponReliabilityPlot(BaseWindow):
     def __init__(self, lambda_value):
         super().__init__()
 
@@ -197,18 +197,16 @@ class ExponReliabilityPlot(QWidget):
         self.canvas = FigureCanvasQTAgg(self.figure)
 
         # Добавляем холст в макет
-        layout = QVBoxLayout()
-        layout.addWidget(self.canvas)
-        self.setLayout(layout)
+        self.layout().addWidget(self.canvas)
 
         # Кнопки для сохранения и копирования графика
-        self.save_button = QPushButton("Сохранить график")
-        self.copy_button = QPushButton("Копировать график")
+        self.save_button = BaseButton("Сохранить график")
+        self.copy_button = BaseButton("Копировать график")
         self.save_button.clicked.connect(self.save_plot)
         self.copy_button.clicked.connect(self.copy_plot)
 
-        layout.addWidget(self.save_button)
-        layout.addWidget(self.copy_button)
+        self.layout().addWidget(self.save_button)
+        self.layout().addWidget(self.copy_button)
 
         time_upper_limit = stats.expon.ppf(0.99, scale=float(1 / self.lambda_value))  # 99% охвата значений
         self.time = np.linspace(0, time_upper_limit, 1000)

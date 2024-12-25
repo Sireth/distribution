@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import (
     QListView,
 )
 
+from windows.base_list_view import BaseListView
 from windows.binomial.binomial_window import BinomialWindow
 from windows.expon.expon_window import ExponWindow
 from windows.normal.normal_window import NormalWindow
@@ -19,6 +20,12 @@ class MainWindow(QMainWindow):
         super().__init__(parent)
 
         self.setWindowTitle("Distribution")
+        self.setStyleSheet('''
+                MainWindow {
+                    background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1,
+                        stop:0 #e83a00,
+                        stop:1 #005ce8);
+                }''')
         self.resize(800, 600)
 
         self.setCentralWidget(QWidget())
@@ -28,7 +35,7 @@ class MainWindow(QMainWindow):
         self.centralWidget().setLayout(grid)
 
         # Список распределений
-        self.distribution_list = QListView()
+        self.distribution_list = BaseListView(self)
         grid.addWidget(self.distribution_list, 0, 0)
 
         # Модель для списка
@@ -68,12 +75,7 @@ class MainWindow(QMainWindow):
                 window = ExponWindow()
             case 4:
                 window = WeibullWindow()
-            # case 3:
-            #     from windows.binomial_window import BinomialWindow
-            #     dialog = BinomialWindow(self)
-            # case 4:
-            #     from windows.hypergeometric_window import HypergeometricWindow
-            #     dialog = HypergeometricWindow(self)
-            # case _:
+            case _:
+                return
         window.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         window.show()
