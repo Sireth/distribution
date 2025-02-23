@@ -27,6 +27,7 @@ class BinomialWindow(BaseWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
 
+        self.probability_range = None
         self.plot_density_window = None
         self.plot_window = None
         self.setWindowTitle("Биномиальное распределение")
@@ -35,10 +36,14 @@ class BinomialWindow(BaseWindow):
         self.n = 0  # Количество испытаний
         self.p = 0  # Вероятность успеха
         self.q = 0  # Вероятность неудачи
-        self.k = 0  # Количество событий
+        self.m = 0  # Количество событий
 
         self.probability_eq = 0
         self.probability_eq_less = 0
+        self.k_value = 0 # Наиболее вероятное число отказов
+
+        self.a_value = 0 # Левая граница
+        self.b_value = 0 # Правая граница
 
         self.check = False
 
@@ -58,9 +63,9 @@ class BinomialWindow(BaseWindow):
 
         sub = BaseSubstrate(self)
         self.layout().addWidget(sub)
-        self.p_label = BaseLabel("Вероятность успеха (p):", sub)
+        self.p_label = BaseLabel("Вероятность безотказной работы (p):", sub)
         self.p_input = FocusOutLineEdit(sub)
-        self.p_input.setPlaceholderText("Введите вероятность успеха")
+        self.p_input.setPlaceholderText("Введите вероятность безотказной работы")
         regex = QRegularExpression(r"^0(\.\d+)?|1(\.0+)?$")
         double_validator = QRegularExpressionValidator(regex)
         self.p_input.setValidator(double_validator)
@@ -74,9 +79,9 @@ class BinomialWindow(BaseWindow):
 
         sub = BaseSubstrate(self)
         self.layout().addWidget(sub)
-        self.q_label = BaseLabel("Вероятность неудачи (q):", sub)
+        self.q_label = BaseLabel("Вероятность отказа (q):", sub)
         self.q_input = FocusOutLineEdit(sub)
-        self.q_input.setPlaceholderText("Введите вероятность неудачи")
+        self.q_input.setPlaceholderText("Введите вероятность отказа")
         regex = QRegularExpression(r"^0(\.\d+)?|1(\.0+)?$")
         double_validator = QRegularExpressionValidator(regex)
         self.q_input.setValidator(double_validator)
@@ -95,7 +100,7 @@ class BinomialWindow(BaseWindow):
         self.plot_distribution_density_btn.setEnabled(False)
 
 
-        self.plot_distribution_btn = BaseButton("Построить график плотности распределения")
+        self.plot_distribution_btn = BaseButton("Построить график распределения")
         self.layout().addWidget(self.plot_distribution_btn)
         self.plot_distribution_btn.clicked.connect(self.plot_distribution)
         self.inputs_validated.connect(self.plot_distribution_btn.setEnabled)
@@ -106,36 +111,95 @@ class BinomialWindow(BaseWindow):
         tmp = QWidget(sub)
         sub.layout().addWidget(tmp)
         tmp.setLayout(QVBoxLayout())
+
+        self.k_value_label = BaseLabel("Наиболее вероятное число отказов (k):", tmp)
+        self.k_value_input = BaseLineEdit(tmp)
+        self.k_value_input.setReadOnly(True)
+        self.inputs_validated.connect(self.calculate_k)
+        tmp.layout().addWidget(self.k_value_label)
+        tmp.layout().addWidget(self.k_value_input)
+
+        sub = BaseSubstrate(self)
+        self.layout().addWidget(sub)
+        tmp = QWidget(sub)
+        sub.layout().addWidget(tmp)
+        tmp.setLayout(QVBoxLayout())
         tmp2 = QWidget(tmp)
         tmp.layout().addWidget(tmp2)
         tmp2.setLayout(QHBoxLayout())
 
-        self.k_label = BaseLabel("Количество событий (k):", tmp2)
-        self.k_input = BaseLineEdit(tmp2)
-        self.k_input.setPlaceholderText("Введите количество событий")
-        self.k_input.setValidator(QIntValidator(0, 9999999))
-        tmp2.layout().addWidget(self.k_label)
-        tmp2.layout().addWidget(self.k_input)
-        self.k_input.textChanged.connect(lambda _ : self.validate_number(self.k_input))
-        self.k_input.textChanged.connect(lambda _ : self.calculate_probability_eq())
-        self.k_input.textChanged.connect(lambda _ : self.calculate_probability_eq_less())
-        self.n_input.textChanged.connect(lambda _ : self.change_k_validator())
+        self.m_label = BaseLabel("Количество событий m в n испытаниях (m):", tmp2)
+        self.m_input = BaseLineEdit(tmp2)
+        self.m_input.setPlaceholderText("Введите количество событий m в n испытаниях")
+        self.m_input.setValidator(QIntValidator(0, 9999999))
+        tmp2.layout().addWidget(self.m_label)
+        tmp2.layout().addWidget(self.m_input)
+        self.m_input.textChanged.connect(lambda _ : self.validate_number(self.m_input))
+        self.m_input.textChanged.connect(lambda _ : self.calculate_probability_eq())
+        self.m_input.textChanged.connect(lambda _ : self.calculate_probability_eq_less())
+        self.n_input.textChanged.connect(lambda _ : self.change_m_validator())
+        self.inputs_validated.connect(lambda _: self.calculate_probability_eq())
+        self.inputs_validated.connect(lambda _: self.calculate_probability_eq_less())
         tmp.layout().addWidget(tmp2)
 
 
-        self.probability_eq_label = BaseLabel("Вероятность безотказной работы (P(X = k)):", tmp)
+        self.probability_eq_label = BaseLabel("Вероятность появления события m в n испытаниях (P(X = m)):", tmp)
         self.probability_eq_input = BaseLineEdit(tmp)
         self.probability_eq_input.setReadOnly(True)
         tmp.layout().addWidget(self.probability_eq_label)
         tmp.layout().addWidget(self.probability_eq_input)
         self.n_changed.connect(lambda _ : self.calculate_probability_eq())
 
-        self.probability_eq_less_label = BaseLabel("Вероятность безотказной работы (P(X ≤ k)):", tmp)
+        self.probability_eq_less_label = BaseLabel("Вероятность появления события m в n испытаниях (P(X ≤ m)):", tmp)
         self.probability_eq_less_input = BaseLineEdit(tmp)
         self.probability_eq_less_input.setReadOnly(True)
         tmp.layout().addWidget(self.probability_eq_less_label)
         tmp.layout().addWidget(self.probability_eq_less_input)
         self.n_changed.connect(lambda _ : self.calculate_probability_eq_less())
+
+        sub = BaseSubstrate(self)
+        self.layout().addWidget(sub)
+        tmp = QWidget(sub)
+        sub.layout().addWidget(tmp)
+        tmp.setLayout(QVBoxLayout())
+
+        self.range_title = BaseLabel("Расчет вероятности для диапазона", tmp)
+        tmp.layout().addWidget(self.range_title)
+
+        tmp3 = QWidget(tmp)
+        tmp.layout().addWidget(tmp3)
+        tmp3.setLayout(QHBoxLayout())
+        self.a_value_label = BaseLabel("Левая граница диапазона (a):", tmp3)
+        self.a_value_input = BaseLineEdit(tmp3)
+        self.a_value_input.setPlaceholderText("Введите левую границу диапазона")
+        self.a_value_input.setValidator(QIntValidator(0, 0))
+        tmp3.layout().addWidget(self.a_value_label)
+        tmp3.layout().addWidget(self.a_value_input)
+        self.a_value_input.textChanged.connect(lambda _ : self.validate_number(self.a_value_input))
+        self.a_value_input.textChanged.connect(lambda _ : self.calculate_probability_range())
+        self.n_changed.connect(lambda _ : self.change_a_validator())
+
+        tmp3 = QWidget(tmp)
+        tmp.layout().addWidget(tmp3)
+        tmp3.setLayout(QHBoxLayout())
+        self.b_value_label = BaseLabel("Правая граница диапазона (b):", tmp3)
+        self.b_value_input = BaseLineEdit(tmp3)
+        self.b_value_input.setPlaceholderText("Введите правую границу диапазона")
+        self.b_value_input.setValidator(QIntValidator(0, 0))
+        tmp3.layout().addWidget(self.b_value_label)
+        tmp3.layout().addWidget(self.b_value_input)
+        self.b_value_input.textChanged.connect(lambda _ : self.validate_number(self.b_value_input))
+        self.b_value_input.textChanged.connect(lambda _ : self.calculate_probability_range())
+        self.n_changed.connect(lambda _: self.change_b_validator())
+
+        self.inputs_validated.connect(lambda _ : self.calculate_probability_range())
+
+        self.probability_range_label = BaseLabel("Вероятность появления события m в n испытаниях (P(a ≤ X ≤ b)):", tmp)
+        self.probability_range_input = BaseLineEdit(tmp)
+        self.probability_range_input.setReadOnly(True)
+        tmp.layout().addWidget(self.probability_range_label)
+        tmp.layout().addWidget(self.probability_range_input)
+
 
         self.export_btn = BaseButton("Экспортировать данные")
         self.layout().addWidget(self.export_btn)
@@ -157,34 +221,39 @@ class BinomialWindow(BaseWindow):
         input_num.change_color("white")
         return True
 
-    def change_k_validator(self):
+    def change_m_validator(self):
         top = self.n
         if not self.validate_number(self.n_input):
             top = 0
         else :
             top = int(self.n_input.text())
 
-        self.k_input.validator().setTop(top)
+        self.m_input.validator().setTop(top)
+        self.validate_number(self.m_input)
 
     def calculate_probability_eq(self):
-        if not (self.validate_number(self.k_input) and self.check):
+        self.change_m_validator()
+        if not (self.validate_number(self.m_input) and self.check):
             self.probability_eq_input.setText("")
             self.probability_eq = 0
             return
 
-        self.k = int(self.k_input.text())
-        self.probability_eq = stats.binom.pmf(self.k, self.n, float(self.p))
+        self.m = int(self.m_input.text())
+        self.probability_eq = stats.binom.pmf(self.m, self.n, float(self.p))
         self.probability_eq_input.setText(str(self.probability_eq))
         return self.probability_eq
 
     def calculate_probability_eq_less(self):
-        if not (self.validate_number(self.k_input) and self.check):
+        self.change_m_validator()
+        if not (self.validate_number(self.m_input) and self.check):
+            print('not')
             self.probability_eq_less_input.setText("")
             self.probability_eq_less = 0
             return
 
-        self.k = int(self.k_input.text())
-        self.probability_eq_less = stats.binom.cdf(self.k, self.n, float(self.p))
+        print('yes')
+        self.m = int(self.m_input.text())
+        self.probability_eq_less = stats.binom.cdf(self.m, self.n, float(self.p))
         self.probability_eq_less_input.setText(str(self.probability_eq_less))
         return self.probability_eq_less
 
@@ -201,6 +270,14 @@ class BinomialWindow(BaseWindow):
         self.q = Decimal(1) - Decimal(self.p_input.text())
         self.q_input.setText(str(self.q))
         return self.q
+
+    def calculate_k(self):
+        self.k_value = 0
+        if self.check:
+            k_values = np.arange(0, self.n + 1)
+            pmf_values = stats.binom.pmf(k_values, self.n, float(self.p))
+            self.k_value = np.argmax(pmf_values)
+        self.k_value_input.setText(str(self.k_value))
 
 
     def validate_inputs(self):
@@ -246,12 +323,12 @@ class BinomialWindow(BaseWindow):
             if not file_extension:
                 file_name += ".xlsx"
 
-            k_values = np.arange(0, self.n + 1)
-            pmf_values = stats.binom.pmf(k_values, self.n, float(self.p))
-            cdf_values = stats.binom.cdf(k_values, self.n, float(self.p))
+            m_values = np.arange(0, self.n + 1)
+            pmf_values = stats.binom.pmf(m_values, self.n, float(self.p))
+            cdf_values = stats.binom.cdf(m_values, self.n, float(self.p))
 
             data = {
-                'k': k_values,
+                'm': m_values,
                 'Функция распределения (CDF)': cdf_values,
                 'Плотность распределения (PMF)': pmf_values,
             }
@@ -289,3 +366,39 @@ class BinomialWindow(BaseWindow):
                             pass
                     adjusted_width = max_length + 5
                     sheet.column_dimensions[column_letter].width = adjusted_width
+
+    def change_a_validator(self):
+        top = self.n
+        bottom = 0
+        self.a_value_input.validator().setRange(bottom, top)
+        self.validate_number(self.a_value_input)
+
+    def change_b_validator(self):
+        top = self.n
+        if self.validate_number(self.a_value_input):
+            self.a_value = int(self.a_value_input.text())
+        bottom = self.a_value
+        self.b_value_input.validator().setRange(bottom, top)
+        self.validate_number(self.b_value_input)
+
+    def calculate_probability_range(self):
+        self.change_a_validator()
+        self.change_b_validator()
+        a_valid = self.validate_number(self.a_value_input)
+        b_valid = self.validate_number(self.b_value_input)
+
+        if a_valid:
+            self.a_value = int(self.a_value_input.text())
+        else:
+            self.a_value = 0
+
+        if b_valid:
+            self.b_value = int(self.b_value_input.text())
+        else:
+            self.b_value = 0
+
+        self.probability_range_input.setText("")
+        if a_valid and b_valid:
+            probability_range_sum = (stats.binom.cdf(self.b_value, self.n, float(self.p))
+                                - stats.binom.cdf(self.a_value - 1, self.n, float(self.p)))
+            self.probability_range_input.setText(str(probability_range_sum))
