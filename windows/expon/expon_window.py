@@ -25,6 +25,7 @@ class ExponWindow(BaseWindow):
     time_changed = pyqtSignal()
     f_t_changed = pyqtSignal(object)
     reliability_changed = pyqtSignal(object)
+    failure_changed = pyqtSignal(object)
 
     time_for_reliability_changed = pyqtSignal(object)
 
@@ -41,10 +42,12 @@ class ExponWindow(BaseWindow):
 
         # Параметры
         self.lambda_value = None  # Интенсивность отказа
+        self.Mtbf         = None  # Средняя наработка на отказ
 
         self.time = None
         self.f_t = None           # Вероятность отказа
         self.reliability = None   # Вероятность безотказной работы
+        self.failure = None       # Вероятность отказа
 
         self.reliability_level = None
         self.time_for_reliability = None
@@ -53,7 +56,6 @@ class ExponWindow(BaseWindow):
         self.replacement_time = None
 
         self.check = False
-
 
 
         sub = BaseSubstrate(self)
@@ -67,7 +69,24 @@ class ExponWindow(BaseWindow):
         sub.layout().addWidget(self.lambda_value_label)
         sub.layout().addWidget(self.lambda_value_input)
         self.lambda_value_input.textChanged.connect(lambda _ : self.validate_number(self.lambda_value_input))
+        self.lambda_value_input.textChanged.connect(lambda _: self.calculate_Mtbf() if self.lambda_value_input.hasFocus() else None)
+        self.lambda_value_input.focusLost.connect(self.calculate_lambda_value)
         self.lambda_value_input.textChanged.connect(lambda _: self.validate_inputs())
+
+        sub = BaseSubstrate(self)
+        self.layout().addWidget(sub)
+        self.Mtbf_label = BaseLabel("Средняя наработка на отказ (T):", sub)
+        self.Mtbf_input = FocusOutLineEdit(sub)
+        self.Mtbf_input.setPlaceholderText("Введите среднюю наработку на отказ")
+        regex = QRegularExpression(r"^\d*(\.\d+)?$")
+        double_validator = QRegularExpressionValidator(regex)
+        self.Mtbf_input.setValidator(double_validator)
+        sub.layout().addWidget(self.Mtbf_label)
+        sub.layout().addWidget(self.Mtbf_input)
+        self.Mtbf_input.textChanged.connect(lambda _: self.validate_number(self.Mtbf_input))
+        self.Mtbf_input.textChanged.connect(lambda _: self.calculate_lambda_value() if self.Mtbf_input.hasFocus() else None)
+        self.Mtbf_input.focusLost.connect(self.calculate_Mtbf)
+        self.Mtbf_input.textChanged.connect(lambda _: self.validate_inputs())
 
         self.plot_distribution_density_btn = BaseButton("Построить график плотности распределения")
         self.layout().addWidget(self.plot_distribution_density_btn)
@@ -98,9 +117,9 @@ class ExponWindow(BaseWindow):
         tmp.layout().addWidget(tmp2)
         tmp2.setLayout(QHBoxLayout())
 
-        self.time_label = BaseLabel("Время (t):", tmp2)
+        self.time_label = BaseLabel("Наработка на отказ (t):", tmp2)
         self.time_input = FocusOutLineEdit(tmp2)
-        self.time_input.setPlaceholderText("Введите время")
+        self.time_input.setPlaceholderText("Введите наработку на отказ")
         regex = QRegularExpression(r"^\d*(\.\d+)?$")
         double_validator = QRegularExpressionValidator(regex)
         self.time_input.setValidator(double_validator)
@@ -112,7 +131,7 @@ class ExponWindow(BaseWindow):
         tmp.layout().addWidget(tmp2)
 
 
-        self.f_label = BaseLabel("Вероятность безотказной работы до времени t (R(t)):", tmp)
+        self.f_label = BaseLabel("Вероятность безотказной работы до наработки t (P(t)):", tmp)
         self.f_input = BaseLineEdit(tmp)
         self.f_input.setReadOnly(True)
         tmp.layout().addWidget(self.f_label)
@@ -121,7 +140,7 @@ class ExponWindow(BaseWindow):
                                         if value is not None
                                         else self.f_input.setText(""))
 
-        self.reliability_label = BaseLabel("Вероятность безотказной работы (R(t)):", tmp)
+        self.reliability_label = BaseLabel("Вероятность безотказной работы (P(t)):", tmp)
         self.reliability_input = BaseLineEdit(tmp)
         self.reliability_input.setReadOnly(True)
         tmp.layout().addWidget(self.reliability_label)
@@ -130,7 +149,14 @@ class ExponWindow(BaseWindow):
                                                 if value is not None
                                                 else self.reliability_input.setText(""))
 
-
+        self.failure_label = BaseLabel("Вероятность отказа (1 - P(t)):", tmp)
+        self.failure_input = BaseLineEdit(tmp)
+        self.failure_input.setReadOnly(True)
+        tmp.layout().addWidget(self.failure_label)
+        tmp.layout().addWidget(self.failure_input)
+        self.failure_changed.connect(lambda value: self.failure_input.setText(str(value))
+                                                if value is not None
+                                                else self.failure_input.setText(""))
 
         sub = BaseSubstrate(self)
         self.layout().addWidget(sub)
@@ -170,7 +196,7 @@ class ExponWindow(BaseWindow):
         tmp.setLayout(QVBoxLayout())
         sub.layout().addWidget(tmp)
 
-        self.max_failure_probability_label_title = BaseLabel("Рассчитать минимальное время до замены", tmp)
+        self.max_failure_probability_label_title = BaseLabel("Рассчитать минимальную наработку до замены", tmp)
         tmp2 = QWidget(tmp)
         tmp2.setLayout(QHBoxLayout())
         self.max_failure_probability_label = BaseLabel("Вероятность отказа:", tmp2)
@@ -185,7 +211,7 @@ class ExponWindow(BaseWindow):
         self.max_failure_probability_input.textChanged.connect(lambda _ : self.set_max_failure_probability())
         tmp.layout().addWidget(tmp2)
 
-        self.replacement_time_label = BaseLabel("Минимальное время замены:", tmp)
+        self.replacement_time_label = BaseLabel("Минимальная наработка до замены:", tmp)
         self.replacement_time_input = BaseLineEdit(tmp)
         self.replacement_time_input.setReadOnly(True)
         tmp.layout().addWidget(self.replacement_time_label)
@@ -209,12 +235,15 @@ class ExponWindow(BaseWindow):
         if (self.time is None) or (not self.check):
             self.f_t = None
             self.reliability = None
+            self.failure = None
         else:
             self.f_t = stats.expon.pdf(float(self.time), scale=float(1 / self.lambda_value))
             self.reliability = 1 - stats.expon.cdf(float(self.time), scale=float(1 / self.lambda_value))
+            self.failure = stats.expon.cdf(float(self.time), scale=float(1 / self.lambda_value))
 
         self.f_t_changed.emit(self.f_t)
         self.reliability_changed.emit(self.reliability)
+        self.failure_changed.emit(self.failure)
 
     def calculate_time_for_reliability(self):
         if (self.reliability_level is None) or (not self.check):
@@ -344,3 +373,17 @@ class ExponWindow(BaseWindow):
         else:
             self.max_failure_probability = None
         self.calculate_replacement_time()
+
+    def calculate_Mtbf(self):
+        if not (self.validate_number(self.lambda_value_input)):
+            return
+        self.Mtbf = Decimal(1) / Decimal(self.lambda_value_input.text())
+        self.Mtbf_input.setText(str(self.Mtbf))
+        return self.Mtbf
+
+    def calculate_lambda_value(self):
+        if not (self.validate_number(self.Mtbf_input)):
+            return
+        self.lambda_value = Decimal(1) / Decimal(self.Mtbf_input.text())
+        self.lambda_value_input.setText(str(self.lambda_value))
+        return self.lambda_value

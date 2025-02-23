@@ -38,6 +38,7 @@ class PoissonWindow(BaseWindow):
         self.lambda_value = 0
         self.probability_eq = 0
         self.probability_eq_less = 0
+        self.k_value = 0 # Наиболее вероятное число отказов
 
         self.check = False
 
@@ -57,9 +58,9 @@ class PoissonWindow(BaseWindow):
         sub = BaseSubstrate(self)
         self.layout().addWidget(sub)
 
-        self.p_label = BaseLabel("Вероятность успеха (p):", sub)
+        self.p_label = BaseLabel("Вероятность безотказной работы (p):", sub)
         self.p_input = FocusOutLineEdit(sub)
-        self.p_input.setPlaceholderText("Введите вероятность успеха")
+        self.p_input.setPlaceholderText("Введите вероятность безотказной работы")
         regex = QRegularExpression(r"^0(\.\d+)?|1(\.0+)?$")
         double_validator = QRegularExpressionValidator(regex)
         self.p_input.setValidator(double_validator)
@@ -74,9 +75,9 @@ class PoissonWindow(BaseWindow):
         sub = BaseSubstrate(self)
         self.layout().addWidget(sub)
 
-        self.q_label = BaseLabel("Вероятность неудачи (q):", sub)
+        self.q_label = BaseLabel("Вероятность отказа (q):", sub)
         self.q_input = FocusOutLineEdit(sub)
-        self.q_input.setPlaceholderText("Введите вероятность неудачи")
+        self.q_input.setPlaceholderText("Введите вероятность отказа")
         regex = QRegularExpression(r"^0(\.\d+)?|1(\.0+)?$")
         double_validator = QRegularExpressionValidator(regex)
         self.q_input.setValidator(double_validator)
@@ -86,17 +87,6 @@ class PoissonWindow(BaseWindow):
         self.q_input.textChanged.connect(lambda _ : self.calculate_p() if self.q_input.hasFocus() else None)
         self.q_input.focusLost.connect(self.calculate_q)
         self.q_input.textChanged.connect(lambda _: self.validate_inputs())
-
-
-        sub = BaseSubstrate(self)
-        self.layout().addWidget(sub)
-
-        self.lambda_label = BaseLabel("Интенсивность отказов (λ):", sub)
-        self.lambda_input = BaseLineEdit(sub)
-        self.lambda_input.setReadOnly(True)
-        sub.layout().addWidget(self.lambda_label)
-        sub.layout().addWidget(self.lambda_input)
-        self.inputs_validated.connect(lambda _ : self.lambda_input.setText(str(self.lambda_value)))
 
 
         self.plot_distribution_density_btn = BaseButton("Построить график плотности распределения")
@@ -117,29 +107,52 @@ class PoissonWindow(BaseWindow):
         tmp = QWidget(sub)
         sub.layout().addWidget(tmp)
         tmp.setLayout(QVBoxLayout())
+
+        self.lambda_label = BaseLabel("Интенсивность отказов (λ):", tmp)
+        self.lambda_label.setToolTip("Параметр распределения Пуассона")
+        self.lambda_input = BaseLineEdit(tmp)
+        self.lambda_input.setReadOnly(True)
+        tmp.layout().addWidget(self.lambda_label)
+        tmp.layout().addWidget(self.lambda_input)
+        self.inputs_validated.connect(lambda _: self.lambda_input.setText(str(self.lambda_value)))
+
+        self.k_value_label = BaseLabel("Наиболее вероятное число отказов (k):", tmp)
+        self.k_value_input = BaseLineEdit(tmp)
+        self.k_value_input.setReadOnly(True)
+        self.inputs_validated.connect(self.calculate_k)
+        tmp.layout().addWidget(self.k_value_label)
+        tmp.layout().addWidget(self.k_value_input)
+
+        sub = BaseSubstrate(self)
+        self.layout().addWidget(sub)
+        tmp = QWidget(sub)
+        sub.layout().addWidget(tmp)
+        tmp.setLayout(QVBoxLayout())
         tmp2 = QWidget(tmp)
         tmp.layout().addWidget(tmp2)
         tmp2.setLayout(QHBoxLayout())
 
-        self.k_label = BaseLabel("Количество событий (k):", tmp2)
-        self.k_input = BaseLineEdit(tmp2)
-        self.k_input.setPlaceholderText("Введите количество событий")
-        self.k_input.setValidator(QIntValidator(0, 9999999))
-        tmp2.layout().addWidget(self.k_label)
-        tmp2.layout().addWidget(self.k_input)
-        self.k_input.textChanged.connect(lambda _ : self.validate_number(self.k_input))
-        self.k_input.textChanged.connect(lambda _ : self.calculate_probability_eq())
-        self.k_input.textChanged.connect(lambda _ : self.calculate_probability_eq_less())
-        self.n_input.textChanged.connect(lambda _ : self.change_k_validator())
+        self.m_label = BaseLabel("Количество событий m в n испытаниях (m):", tmp2)
+        self.m_input = BaseLineEdit(tmp2)
+        self.m_input.setPlaceholderText("Введите количество событий m в n испытаниях")
+        self.m_input.setValidator(QIntValidator(0, 9999999))
+        tmp2.layout().addWidget(self.m_label)
+        tmp2.layout().addWidget(self.m_input)
+        self.m_input.textChanged.connect(lambda _ : self.validate_number(self.m_input))
+        self.m_input.textChanged.connect(lambda _ : self.calculate_probability_eq())
+        self.m_input.textChanged.connect(lambda _ : self.calculate_probability_eq_less())
+        self.n_input.textChanged.connect(lambda _ : self.change_m_validator())
+        self.inputs_validated.connect(lambda _: self.calculate_probability_eq())
+        self.inputs_validated.connect(lambda _: self.calculate_probability_eq_less())
 
-        self.probability_eq_label = BaseLabel("Вероятность безотказной работы (P(X = k)):", tmp)
+        self.probability_eq_label = BaseLabel("Вероятность появления события m в n испытаниях (P(X = m)):", tmp)
         self.probability_eq_input = BaseLineEdit(tmp)
         self.probability_eq_input.setReadOnly(True)
         tmp.layout().addWidget(self.probability_eq_label)
         tmp.layout().addWidget(self.probability_eq_input)
         self.n_changed.connect(lambda _ : self.calculate_probability_eq())
 
-        self.probability_eq_less_label = BaseLabel("Вероятность безотказной работы (P(X ≤ k)):", tmp)
+        self.probability_eq_less_label = BaseLabel("Вероятность появления события m в n испытаниях (P(X ≤ m)):", tmp)
         self.probability_eq_less_input = BaseLineEdit(tmp)
         self.probability_eq_less_input.setReadOnly(True)
         tmp.layout().addWidget(self.probability_eq_less_label)
@@ -153,35 +166,36 @@ class PoissonWindow(BaseWindow):
         self.inputs_validated.connect(self.export_btn.setEnabled)
         self.export_btn.setEnabled(False)
 
-
-
-    def change_k_validator(self):
+    def change_m_validator(self):
         top = self.n
         if not self.validate_number(self.n_input):
             top = 0
-        else :
+        else:
             top = int(self.n_input.text())
 
-        self.k_input.validator().setTop(top)
+        self.m_input.validator().setTop(top)
+        self.validate_number(self.m_input)
 
     def calculate_probability_eq(self):
-        if not (self.validate_number(self.k_input) and self.check):
+        self.change_m_validator()
+        if not (self.validate_number(self.m_input) and self.check):
             self.probability_eq_input.setText("")
             self.probability_eq = 0
             return
 
-        self.k = int(self.k_input.text())
+        self.k = int(self.m_input.text())
         self.probability_eq = stats.poisson.pmf(self.k, float(self.lambda_value))
         self.probability_eq_input.setText(str(self.probability_eq))
         return self.probability_eq
 
     def calculate_probability_eq_less(self):
-        if not (self.validate_number(self.k_input) and self.check):
+        self.change_m_validator()
+        if not (self.validate_number(self.m_input) and self.check):
             self.probability_eq_less_input.setText("")
             self.probability_eq_less = 0
             return
 
-        self.k = int(self.k_input.text())
+        self.k = int(self.m_input.text())
         self.probability_eq_less = stats.poisson.cdf(self.k, float(self.lambda_value))
         self.probability_eq_less_input.setText(str(self.probability_eq_less))
         return self.probability_eq_less
@@ -199,6 +213,14 @@ class PoissonWindow(BaseWindow):
         self.q = Decimal(1) - Decimal(self.p_input.text())
         self.q_input.setText(str(self.q))
         return self.q
+
+    def calculate_k(self):
+        self.k_value = 0
+        if self.check:
+            k_values = np.arange(0, self.n + 1)
+            pmf_values = stats.poisson.cdf(k_values, float(self.lambda_value))
+            self.k_value = np.argmax(pmf_values)
+        self.k_value_input.setText(str(self.k_value))
 
 
     def validate_inputs(self):
@@ -262,7 +284,7 @@ class PoissonWindow(BaseWindow):
             cdf_values = stats.poisson.cdf(k_values, float(self.lambda_value))
 
             data = {
-                'k': k_values,
+                'm': k_values,
                 'Функция распределения (CDF)': cdf_values,
                 'Плотность распределения (PMF)': pmf_values,
             }
@@ -281,9 +303,9 @@ class PoissonWindow(BaseWindow):
                 sheet['D2'] = self.n
                 sheet['E1'] = 'Интенсивность отказов (λ)'
                 sheet['E2'] = self.lambda_value
-                sheet['F1'] = 'Вероятность успеха (p)'
+                sheet['F1'] = 'Вероятность безотказной работы (p)'
                 sheet['F2'] = self.p
-                sheet['G1'] = 'Вероятность неудачи (q)'
+                sheet['G1'] = 'Вероятность отказа (q)'
                 sheet['G2'] = self.q
 
 

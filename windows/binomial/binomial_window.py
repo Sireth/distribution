@@ -246,12 +246,10 @@ class BinomialWindow(BaseWindow):
     def calculate_probability_eq_less(self):
         self.change_m_validator()
         if not (self.validate_number(self.m_input) and self.check):
-            print('not')
             self.probability_eq_less_input.setText("")
             self.probability_eq_less = 0
             return
 
-        print('yes')
         self.m = int(self.m_input.text())
         self.probability_eq_less = stats.binom.cdf(self.m, self.n, float(self.p))
         self.probability_eq_less_input.setText(str(self.probability_eq_less))
@@ -345,9 +343,9 @@ class BinomialWindow(BaseWindow):
 
                 sheet['D1'] = 'Размер выборки (n)'
                 sheet['D2'] = self.n
-                sheet['E1'] = 'Вероятность успеха (p)'
+                sheet['E1'] = 'Вероятность безотказной работы (p)'
                 sheet['E2'] = self.p
-                sheet['F1'] = 'Вероятность неудачи (q)'
+                sheet['F1'] = 'Вероятность отказа (q)'
                 sheet['F2'] = self.q
 
                 for col in sheet.iter_cols(min_row=1, max_row=1, min_col=1, max_col=6):
